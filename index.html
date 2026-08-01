@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendrier des Villas</title>
+<meta name="theme-color" content="#1f6fd0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Villas">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f6fd0'/%3E%3Ctext x='32' y='45' font-size='36' text-anchor='middle' fill='white' font-family='Arial'%3EV%3C/text%3E%3C/svg%3E">
+<script src="data.js"></script>
+<style>
+:root{
+  --bg:#f4f6f9; --panel:#fff; --ink:#1d2733; --muted:#6b7787; --line:#dde3ea;
+  --booking:#1f6fd0; --booking-bg:#dbe8fa;
+  --airbnb:#d6338f;  --airbnb-bg:#fbd9ef;
+  --direct:#0e9aad;  --direct-bg:#d3f2f6;
+  --interne:#6b7480; --interne-bg:#e3e7eb;
+  --apreciser:#9aa3ae; --apreciser-bg:#f2f4f7;
+  --row:42px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font:13px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+button{font:inherit;cursor:pointer}
+input,select,textarea{font:inherit}
+
+/* ---------- top bar ---------- */
+header{position:sticky;top:0;z-index:60;background:var(--panel);border-bottom:1px solid var(--line);
+  padding:8px 12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.brand{font-weight:700;font-size:15px;margin-right:4px;white-space:nowrap}
+.brand #build{font-size:10px;font-weight:700;color:#6b7787;background:#eef1f5;border-radius:5px;padding:1px 6px;vertical-align:2px}
+.nav{display:flex;align-items:center;gap:4px}
+.nav button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:5px 10px;line-height:1}
+.nav button:hover{background:#eef2f7}
+#period{font-weight:700;min-width:168px;text-align:center;text-transform:capitalize}
+.tabs{display:flex;background:#eef1f5;border-radius:9px;padding:2px}
+.tabs button{border:0;background:transparent;border-radius:7px;padding:6px 12px;color:var(--muted);font-weight:600}
+.tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.spacer{flex:1}
+.btn{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 11px;font-weight:600}
+.btn:hover{background:#eef2f7}
+.btn.primary{background:var(--booking);border-color:var(--booking);color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.warn{background:#fff3f3;border-color:#f0c2c2;color:#a32020}
+#search{border:1px solid var(--line);border-radius:7px;padding:6px 9px;width:180px}
+
+/* ---------- legend / filters ---------- */
+.legend{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:7px 12px;background:var(--panel);
+  border-bottom:1px solid var(--line);position:sticky;top:49px;z-index:55}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;
+  border-radius:999px;padding:4px 11px;font-size:12px;font-weight:600;color:var(--muted);user-select:none}
+.chip .dot{width:11px;height:11px;border-radius:3px;border:1px solid rgba(0,0,0,.15)}
+.chip.on{color:var(--ink);border-color:#b9c4d1;background:#f7f9fc}
+.chip.off{opacity:.38}
+.dot.booking{background:var(--booking-bg);border-color:var(--booking)}
+.dot.airbnb{background:var(--airbnb-bg);border-color:var(--airbnb)}
+.dot.direct{background:var(--direct-bg);border-color:var(--direct)}
+.dot.interne{background:var(--interne-bg);border-color:var(--interne)}
+.dot.apreciser{background:repeating-linear-gradient(45deg,#fff,#fff 3px,#dfe4ea 3px,#dfe4ea 6px);border-color:#b6bec8}
+.savebox{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.savebox b{color:#1f8f4a}
+.savebox.dirty b{color:#c07000}
+
+/* ---------- month planning ---------- */
+main{padding:12px}
+.plan{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:auto;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.plan-head{display:grid;position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:2px solid var(--line)}
+.plan-head>div{padding:9px 8px;font-weight:700;text-align:center;border-left:1px solid var(--line);font-size:13px}
+.plan-head>div:first-child{border-left:0}
+.plan-body{display:grid;position:relative}
+.daycol{border-right:1px solid var(--line);background:#fafbfd}
+.day{height:var(--row);border-bottom:1px solid #eef1f5;display:flex;align-items:center;gap:7px;padding:0 8px;font-size:11.5px;color:var(--muted)}
+.day .n{font-weight:800;color:var(--ink);font-size:13px;min-width:20px;text-align:right}
+.day.we{background:#f1f4f9}
+.day.today{background:#fff6d8}
+.day.today .n{color:#b8860b}
+.vcol{position:relative;border-right:1px solid var(--line)}
+.vcol:last-child{border-right:0}
+.vgrid{position:absolute;inset:0;z-index:0}
+.vgrid div{height:var(--row);border-bottom:1px solid #eef1f5}
+.vgrid div.we{background:#f7f9fc}
+
+.stay{position:absolute;left:4px;right:4px;border-radius:7px;padding:4px 7px;overflow:hidden;
+  border:1px solid;border-left-width:5px;z-index:2;cursor:pointer;transition:box-shadow .12s}
+.stay:hover{box-shadow:0 0 0 2px rgba(31,111,208,.35);z-index:5}
+.stay .nm{font-weight:800;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stay .ln{font-size:11px;color:#33404f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stay .mny{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stay .reste{color:#b3261e}
+.stay.s-booking{background:var(--booking-bg);border-color:var(--booking)}
+.stay.s-airbnb{background:var(--airbnb-bg);border-color:var(--airbnb)}
+.stay.s-direct{background:var(--direct-bg);border-color:var(--direct)}
+.stay.s-interne{background:var(--interne-bg);border-color:var(--interne);
+  background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.045),rgba(0,0,0,.045) 6px,transparent 6px,transparent 12px)}
+.stay.s-apreciser{background:var(--apreciser-bg);border-color:var(--apreciser);border-style:dashed;border-left-style:solid}
+.stay.short{padding:2px 6px}
+.stay.short .nm{font-size:11.5px}
+.tag{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.4px;padding:1px 5px;border-radius:4px;
+  background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.12);margin-right:4px;vertical-align:1px}
+.arrive{position:absolute;left:4px;right:4px;height:17px;z-index:4;border-radius:5px 5px 0 0;
+  font-size:10px;font-weight:800;letter-spacing:.3px;display:flex;align-items:center;padding:0 6px;
+  color:#0b5c2a;background:#c9f2d6;border:1px solid #58b97c;border-bottom:0}
+.stay.hasout{padding-bottom:17px}
+.stay .out{position:absolute;left:0;right:0;bottom:0;height:16px;display:flex;align-items:center;
+  padding:0 7px;font-size:9.5px;font-weight:800;letter-spacing:.3px;color:#8a2f0b;
+  background:rgba(255,255,255,.72);border-top:1px dashed rgba(0,0,0,.28);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stay .out.next{color:#334a63}
+.turn{position:absolute;left:4px;right:4px;height:0;border-top:2px dashed #e0403f;z-index:8}
+.turnlbl{position:absolute;right:6px;font-size:9px;font-weight:800;color:#b3261e;background:#fff;
+  padding:0 4px;border-radius:3px;border:1px solid #f3c2c2;z-index:9;line-height:12px;margin-top:-7px}
+
+/* ---------- availability ---------- */
+.gantt{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto}
+.gantt table{border-collapse:collapse;width:100%}
+.gantt th{font-size:10px;color:var(--muted);font-weight:700;padding:2px 0;text-align:center;border-bottom:1px solid var(--line)}
+.gantt th.vn{text-align:left;padding-right:10px;font-size:13px;color:var(--ink);white-space:nowrap;position:sticky;left:0;background:var(--panel);z-index:3}
+.gantt td.vn{font-weight:700;white-space:nowrap;padding-right:10px;position:sticky;left:0;background:var(--panel);z-index:3;border-right:1px solid var(--line)}
+.gantt td.cell{height:30px;border-right:1px solid #eef1f5;border-bottom:1px solid #eef1f5;position:relative;min-width:15px}
+.gantt td.cell.we{background:#f4f7fb}
+.gantt td.cell.m0{border-left:2px solid #b9c4d1}
+.gantt .seg{position:absolute;inset:2px 0;border-radius:3px;border:1px solid;cursor:pointer}
+.gantt .seg.s-booking{background:var(--booking-bg);border-color:var(--booking)}
+.gantt .seg.s-airbnb{background:var(--airbnb-bg);border-color:var(--airbnb)}
+.gantt .seg.s-direct{background:var(--direct-bg);border-color:var(--direct)}
+.gantt .seg.s-interne{background:var(--interne-bg);border-color:var(--interne)}
+.gantt .seg.s-apreciser{background:var(--apreciser-bg);border-color:var(--apreciser);border-style:dashed}
+.gantt .seg .lbl{font-size:10px;font-weight:700;padding:0 4px;white-space:nowrap;overflow:hidden;line-height:24px}
+.freebox{margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.freecard{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfcfe}
+.freecard h4{margin:0 0 6px;font-size:13px}
+.freecard ul{margin:0;padding-left:16px;color:#2f6b3f;font-size:12px}
+.freecard li{margin:2px 0}
+
+/* ---------- list ---------- */
+.tablewrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:auto}
+table.list{border-collapse:collapse;width:100%;font-size:12.5px}
+table.list th{position:sticky;top:0;background:#f7f9fc;text-align:left;padding:9px 10px;border-bottom:2px solid var(--line);font-size:11.5px;color:var(--muted);white-space:nowrap;z-index:2}
+table.list td{padding:8px 10px;border-bottom:1px solid #eef1f5;white-space:nowrap}
+table.list tr:hover td{background:#f7fbff;cursor:pointer}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid}
+.pill.s-booking{background:var(--booking-bg);border-color:var(--booking);color:#164e94}
+.pill.s-airbnb{background:var(--airbnb-bg);border-color:var(--airbnb);color:#96206a}
+.pill.s-direct{background:var(--direct-bg);border-color:var(--direct);color:#0a6f7d}
+.pill.s-interne{background:var(--interne-bg);border-color:var(--interne);color:#465059}
+.pill.s-apreciser{background:var(--apreciser-bg);border-color:var(--apreciser);color:#6b7480}
+.sums{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.sum{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 14px;min-width:130px}
+.sum b{display:block;font-size:18px;margin-top:2px}
+.sum span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+
+/* ---------- modal ---------- */
+.mask{position:fixed;inset:0;background:rgba(20,28,38,.45);display:none;z-index:100;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 12px}
+.mask.on{display:flex}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:600px;box-shadow:0 18px 50px rgba(0,0,0,.3)}
+.modal h3{margin:0;padding:14px 18px;border-bottom:1px solid var(--line);font-size:15px}
+.mbody{padding:16px 18px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mbody label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.mbody input,.mbody select,.mbody textarea{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-weight:400;color:var(--ink);text-transform:none;letter-spacing:0}
+.mbody .full{grid-column:1/-1}
+.srcpick{display:flex;flex-wrap:wrap;gap:6px}
+.srcpick button{border:2px solid transparent;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;background:#f1f4f8;color:#3b4653}
+.srcpick button.on{border-color:#1d2733}
+.srcpick button[data-s=booking]{background:var(--booking-bg);color:#164e94}
+.srcpick button[data-s=airbnb]{background:var(--airbnb-bg);color:#96206a}
+.srcpick button[data-s=direct]{background:var(--direct-bg);color:#0a6f7d}
+.srcpick button[data-s=interne]{background:var(--interne-bg);color:#465059}
+.mfoot{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.err{color:#b3261e;font-size:12px;font-weight:600}
+.hint{font-size:11px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0}
+
+body.ro #add, body.ro #addEvent, body.ro #mSave, body.ro #mDel, body.ro #impJson{display:none!important}
+/* ---------- vues téléphone ---------- */
+.vswitch{display:none;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px}
+.vswitch button{flex:1 0 auto;border:1px solid var(--line);background:#fff;border-radius:9px;
+  padding:9px 12px;font-weight:700;font-size:13px;white-space:nowrap;color:var(--muted)}
+.vswitch button.on{background:var(--booking);border-color:var(--booking);color:#fff}
+.cards{display:flex;flex-direction:column;gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-left-width:5px;border-radius:10px;padding:10px 12px}
+.card .t{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.card .t b{font-size:14px}
+.card .d{font-size:12px;color:#33404f;margin-top:3px}
+.card .m{font-size:12px;font-weight:700;margin-top:4px}
+.card.s-booking{border-left-color:var(--booking)}
+.card.s-airbnb{border-left-color:var(--airbnb)}
+.card.s-direct{border-left-color:var(--direct)}
+.card.s-interne{border-left-color:var(--interne);background:var(--interne-bg)}
+.card.s-apreciser{border-left-color:var(--apreciser)}
+
+@media (max-width:720px){
+  .vswitch{display:flex}
+  .legend .chip[data-villa]{display:none}
+  :root{--row:52px}
+  .stay .nm{font-size:13.5px}
+  .stay .ln,.stay .mny{font-size:12px}
+  .stay .out{height:18px;font-size:10.5px}
+  .stay.hasout{padding-bottom:19px}
+  .plan{border-radius:10px}
+  .day{font-size:11px}
+  .day .n{font-size:15px}
+  .sums{gap:6px}
+  .sum{flex:1 1 45%;min-width:0;padding:8px 10px}
+  .sum b{font-size:15px}
+  .gantt td.cell{height:34px;min-width:11px}
+  .gantt td.vn,.gantt th.vn{font-size:11px;padding-right:6px}
+  .freebox{grid-template-columns:1fr}
+  .mbody{grid-template-columns:1fr}
+  #search{width:100%;order:9}
+  .brand{font-size:13px}
+  .brand #build{display:none}
+  main{padding:5px}
+  :root{--row:40px}
+  header,.legend{position:static}
+  header{padding:6px 8px;gap:6px}
+  .nav button,.btn{padding:8px 10px}
+  .tabs button{padding:8px 10px;font-size:12px}
+  #period{min-width:118px;font-size:13px}
+  .legend{padding:6px 8px;gap:5px;overflow-x:auto;flex-wrap:nowrap}
+  .legend .chip{white-space:nowrap;padding:6px 10px}
+  .legend .savebox{white-space:nowrap}
+  .mask{padding:0}
+  .modal{max-width:none;border-radius:0;min-height:100%}
+  .mbody input,.mbody select,.mbody textarea{padding:11px 10px;font-size:16px}
+  .mfoot{position:sticky;bottom:0;background:#fff}
+  .mfoot .btn{padding:11px 14px}
+  .plan-head>div{font-size:11px;padding:7px 3px}
+  .stay{left:2px;right:2px;padding:3px 5px}
+  .stay .nm{font-size:11.5px}
+  .stay .ln,.stay .mny{font-size:10px}
+  .day{gap:3px;padding:0 4px;font-size:10px}
+}
+@media print{
+  header,.legend,.tabs,.btn{display:none!important}
+  body{background:#fff}
+  .plan{border:0}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">🏡 Calendrier des Villas <span id="build"></span></div>
+  <div class="nav">
+    <button id="prev" title="Mois précédent">◀</button>
+    <span id="period"></span>
+    <button id="next" title="Mois suivant">▶</button>
+    <button id="today">Aujourd'hui</button>
+  </div>
+  <div class="tabs">
+    <button data-view="mois" class="on">Planning</button>
+    <button data-view="dispo">Disponibilités</button>
+    <button data-view="liste">Liste</button>
+  </div>
+  <input id="search" placeholder="Rechercher un client…">
+  <div class="spacer"></div>
+  <button class="btn primary" id="add">+ Réservation</button>
+  <button class="btn" id="addEvent">+ Événement</button>
+  <button class="btn" id="menu" title="Fichier / synchronisation">⚙︎</button>
+</header>
+
+<div class="legend">
+  <span style="font-weight:700;font-size:12px">Filtres :</span>
+  <span class="chip on" data-src="booking"><i class="dot booking"></i>Booking.com</span>
+  <span class="chip on" data-src="airbnb"><i class="dot airbnb"></i>Airbnb</span>
+  <span class="chip on" data-src="direct"><i class="dot direct"></i>Direct</span>
+  <span class="chip on" data-src="interne"><i class="dot interne"></i>Événements internes</span>
+  <span class="chip on" data-src="apreciser"><i class="dot apreciser"></i>À préciser</span>
+  <span style="width:14px"></span>
+  <span id="villaChips"></span>
+  <div class="spacer"></div>
+  <div class="savebox" id="savebox"><span id="saveTxt">…</span></div>
+</div>
+
+<main id="main"></main>
+
+<!-- edit modal -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <h3 id="mTitle">Réservation</h3>
+    <div class="mbody">
+      <label class="full">Type / origine
+        <div class="srcpick" id="srcPick">
+          <button data-s="booking">Booking.com</button>
+          <button data-s="airbnb">Airbnb</button>
+          <button data-s="direct">Réservation directe</button>
+          <button data-s="interne">Événement interne</button>
+          <button data-s="apreciser">À préciser</button>
+        </div>
+      </label>
+      <label>Villa<select id="fVilla"></select></label>
+      <label id="wEvent" style="display:none">Type d'événement
+        <select id="fEventType">
+          <option value="travaux">Travaux</option>
+          <option value="maintenance">Maintenance</option>
+          <option value="insectes">Traitement insectes</option>
+          <option value="famille">Réservation familiale</option>
+          <option value="nettoyage">Nettoyage exceptionnel</option>
+          <option value="autre">Autre intervention</option>
+        </select>
+      </label>
+      <label class="full" id="wClient">Nom du client<input id="fClient" placeholder="Nom et prénom"></label>
+      <label>Entrée<input type="date" id="fStart"></label>
+      <label>Sortie<input type="date" id="fEnd"></label>
+      <label id="wNb">Nombre de voyageurs<input type="number" id="fNb" min="0" step="1"></label>
+      <label id="wNbD">Détail <span class="hint">(ex : 4 adultes, 2 enfants)</span><input id="fNbD"></label>
+      <label id="wTot">Montant total<input type="number" id="fTotal" step="0.01"></label>
+      <label id="wCur">Devise<select id="fCur">
+          <option value="EUR">€ Euro (EUR)</option>
+          <option value="GBP">£ Livre sterling (GBP)</option>
+          <option value="MAD">DH Dirham (MAD)</option>
+        </select></label>
+      <label id="wAv">Avance versée<input type="number" id="fAv" step="0.01"></label>
+      <label id="wRe">Reste à payer <span class="hint">(auto)</span><input type="number" id="fRe" step="0.01"></label>
+      <label class="full">Remarques<textarea id="fNotes" rows="2"></textarea></label>
+      <div class="full err" id="fErr"></div>
+    </div>
+    <div class="mfoot">
+      <button class="btn primary" id="mSave">Enregistrer</button>
+      <button class="btn" id="mCancel">Annuler</button>
+      <div class="spacer"></div>
+      <button class="btn warn" id="mDel">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- file / sync modal -->
+<div class="mask" id="mask2">
+  <div class="modal" style="max-width:520px">
+    <h3>Fichier &amp; synchronisation</h3>
+    <div class="mbody" style="grid-template-columns:1fr">
+      <div id="dbxBox" style="border:1px solid var(--line);border-radius:10px;padding:12px;background:#f7fbff">
+        <div style="font-weight:800;font-size:13px;margin-bottom:6px">☁︎ Dropbox — synchronisation directe</div>
+        <div id="dbxState" style="font-size:12.5px;line-height:1.55;margin-bottom:8px"></div>
+        <div id="dbxSetup">
+          <label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase">Clé d'application Dropbox
+            <input id="dbxKey" placeholder="ex : a1b2c3d4e5f6g7h" style="width:100%;margin-top:4px;text-transform:none;font-weight:400">
+          </label>
+          <div style="font-size:11px;color:var(--muted);margin:6px 0 8px">
+            À créer une seule fois sur <b>dropbox.com/developers/apps</b> — voir le guide.
+            Adresse de redirection à y coller : <code id="dbxRedirect" style="user-select:all"></code>
+          </div>
+          <button class="btn primary" id="dbxConnect" style="width:100%">Connecter mon Dropbox</button>
+        </div>
+        <div id="dbxLinked" style="display:none">
+          <div style="font-size:12px;margin-bottom:8px">Fichier : <code id="dbxPath" style="user-select:all"></code></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button class="btn" id="dbxPull">🔄 Recharger</button>
+            <button class="btn" id="dbxPush">💾 Envoyer</button>
+            <button class="btn" id="dbxFind">🔎 Choisir le fichier</button>
+            <button class="btn warn" id="dbxOut">Déconnecter</button>
+          </div>
+        </div>
+      </div>
+      <div id="syncState" style="font-size:12.5px;line-height:1.6"></div>
+      <button class="btn" id="expJson">⬇︎ Sauvegarde : télécharger data.js</button>
+      <button class="btn" id="impJson">⬆︎ Restaurer une sauvegarde</button>
+      <input type="file" id="fileIn" accept=".js,.json" style="display:none">
+      <button class="btn" id="expCsv">⬇︎ Exporter la liste en CSV</button>
+      <button class="btn" id="prt">🖨 Imprimer le mois affiché</button>
+    </div>
+    <div class="mfoot"><div class="spacer"></div><button class="btn" id="m2Close">Fermer</button></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   Données
+   ============================================================ */
+const EMBEDDED = /*<<DATA*/{"version":1,"villas":[],"bookings":[]}/*DATA>>*/;
+let READONLY = /*<<RO*/false/*RO>>*/;
+
+const BUILD = 'v3.3';
+const SRC_LABEL = {booking:'Booking.com', airbnb:'Airbnb', direct:'Direct', interne:'Interne', apreciser:'À préciser'};
+const EVT_LABEL = {travaux:'Travaux', maintenance:'Maintenance', insectes:'Traitement insectes',
+                   famille:'Réservation familiale', nettoyage:'Nettoyage exceptionnel', autre:'Intervention'};
+const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const JOURS = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+const JOURS3 = ['dim','lun','mar','mer','jeu','ven','sam'];
+
+let DATA = null, dirHandle = null, dirty = false, lastLoadedStamp = null;
+const state = {
+  view:'mois', y:new Date().getFullYear(), m:new Date().getMonth(),
+  src:new Set(['booking','airbnb','direct','interne','apreciser']),
+  mVilla:'',
+  villas:new Set(), q:'', editing:null
+};
+
+/* ---------- utilitaires date ---------- */
+const pad = n => String(n).padStart(2,'0');
+const iso = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parse = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const addD = (s,n) => { const d=parse(s); d.setDate(d.getDate()+n); return iso(d); };
+const nights = (a,b) => Math.round((parse(b)-parse(a))/86400000);
+const fmtFR = s => { const d=parse(s); return pad(d.getDate())+'/'+pad(d.getMonth()+1); };
+const fmtFRY = s => { const d=parse(s); return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear(); };
+const CUR_SYM = {EUR:'€', MAD:'DH', GBP:'£'};
+const money = (v,c) => v==null||v==='' ? '—' :
+  new Intl.NumberFormat('fr-FR',{maximumFractionDigits:2}).format(v)+' '+(CUR_SYM[c]||c||'€');
+const todayISO = iso(new Date());
+
+/* ============================================================
+   Chargement / sauvegarde
+   ============================================================ */
+async function idbSet(k,v){ return new Promise(r=>{ try{ const q=indexedDB.open('villas',1);
+  q.onupgradeneeded=()=>q.result.createObjectStore('kv'); q.onsuccess=()=>{ const t=q.result.transaction('kv','readwrite');
+  t.objectStore('kv').put(v,k); t.oncomplete=()=>r(); }; q.onerror=()=>r(); }catch(e){ r(); } }); }
+async function idbGet(k){ return new Promise(r=>{ try{ const q=indexedDB.open('villas',1);
+  q.onupgradeneeded=()=>q.result.createObjectStore('kv'); q.onsuccess=()=>{ const t=q.result.transaction('kv','readonly');
+  const g=t.objectStore('kv').get(k); g.onsuccess=()=>r(g.result); g.onerror=()=>r(null); }; q.onerror=()=>r(null); }catch(e){ r(null); } }); }
+
+function normalise(d){
+  d.villas = d.villas || [];
+  d.bookings = (d.bookings||[]).map(b=>({
+    id:b.id||('b'+Math.random().toString(36).slice(2,9)),
+    villa:String(b.villa), kind:b.kind||'booking', source:b.source||'apreciser',
+    eventType:b.eventType||null, client:b.client||'', nb:b.nb??null, nbDetail:b.nbDetail||'',
+    start:b.start, end:b.end||addD(b.start,1), total:b.total??null, currency:b.currency||'EUR',
+    avance:b.avance??null, reste:b.reste??null, notes:b.notes||'', raw:b.raw||'',
+    endEstimated:!!b.endEstimated
+  })).filter(b=>b.start);
+  return d;
+}
+
+const DATA_FILE = 'data.js';
+const WRAP_HEAD = 'window.__VILLAS_DATA__ = ';
+function unwrap(txt){
+  const i = txt.indexOf('{');
+  const j = txt.lastIndexOf('}');
+  if(i<0||j<0) throw new Error('fichier illisible');
+  return JSON.parse(txt.slice(i, j+1));
+}
+function wrap(d){ return WRAP_HEAD + JSON.stringify(d,null,1) + ';\n'; }
+
+async function readDir(){
+  if(!dirHandle) return null;
+  for(const name of [DATA_FILE,'data.json']){
+    try{
+      const fh = await dirHandle.getFileHandle(name,{create:false});
+      const f = await fh.getFile();
+      const d = normalise(unwrap(await f.text()));
+      lastLoadedStamp = f.lastModified;
+      return d;
+    }catch(e){}
+  }
+  return null;
+}
+
+async function saveNow(force){
+  if(dbxOn()){
+    try{
+      DATA.saved = new Date().toISOString();
+      const ok = await dbxUpload(force);
+      if(ok){ dirty=false; setSave('Enregistré dans Dropbox','ok'); return true; }
+      setSave('Non enregistré — rechargez','bad'); return false;
+    }catch(e){
+      dirty=true; setSave('Dropbox injoignable — réessayez','bad');
+      try{ localStorage.setItem('villas.data', JSON.stringify(DATA)); }catch(_){}
+      return false;
+    }
+  }
+  if(dirHandle){
+    try{
+      // détecter une modification faite depuis un autre ordinateur
+      if(!force){
+        try{
+          const fh0 = await dirHandle.getFileHandle(DATA_FILE,{create:false});
+          const f0 = await fh0.getFile();
+          if(lastLoadedStamp && f0.lastModified > lastLoadedStamp + 1500){
+            if(!confirm("⚠️ Le fichier data.js a été modifié ailleurs (autre ordinateur / Dropbox).\n\nOK = écraser avec ma version.\nAnnuler = ne rien enregistrer (rechargez d'abord).")) {
+              return false;
+            }
+          }
+        }catch(e){}
+      }
+      DATA.saved = new Date().toISOString();
+      const fh = await dirHandle.getFileHandle(DATA_FILE,{create:true});
+      const w = await fh.createWritable();
+      await w.write(wrap(DATA));
+      await w.close();
+      const f = await fh.getFile(); lastLoadedStamp = f.lastModified;
+      dirty=false; setSave('Enregistré dans Dropbox','ok'); return true;
+    }catch(e){ setSave('Erreur d\'écriture — exportez manuellement','bad'); return false; }
+  }
+  try{ localStorage.setItem('villas.data', JSON.stringify(DATA)); }catch(e){}
+  
+  dirty=true; setSave('Non enregistré — connectez Dropbox (⚙︎)','dirty');
+  return true;
+}
+
+function setSave(txt,kind){
+  const el=document.getElementById('savebox');
+  el.className='savebox'+(kind==='dirty'||kind==='bad'?' dirty':'');
+  document.getElementById('saveTxt').innerHTML = (kind==='ok'?'✅ ':kind==='bad'?'⛔️ ':'💾 ')+'<b>'+txt+'</b>';
+}
+
+async function boot(){
+ try{
+  document.getElementById('build').textContent = BUILD;
+  if(READONLY){
+    DATA = normalise(JSON.parse(JSON.stringify(EMBEDDED)));
+    state.villas = new Set(DATA.villas.map(v=>v.id));
+    document.body.classList.add('ro');
+    setSave('Version consultation — lecture seule','dirty');
+    buildVillaChips(); render();
+    return;
+  }
+  // retour d'autorisation Dropbox
+  try{ await dbxRedirectBack(); }catch(e){}
+  let dbxData = null;
+  if(dbxOn()){
+    try{
+      await dbxAccount();
+      dbxData = await dbxDownload();
+    }catch(e){ console.warn('Dropbox', e); }
+  }
+  dirHandle = await idbGet('dir');
+  if(dirHandle){
+    try{
+      const p = await dirHandle.queryPermission({mode:'readwrite'});
+      if(p!=='granted'){ const p2 = await dirHandle.requestPermission({mode:'readwrite'}); if(p2!=='granted') dirHandle=null; }
+    }catch(e){ dirHandle=null; }
+  }
+  let d = dbxData;
+  let src = d ? 'Dropbox' : '';
+  if(!d){ d = await readDir(); if(d) src='dossier'; }
+  if(!d && window.__VILLAS_DATA__){
+    try{ d = normalise(JSON.parse(JSON.stringify(window.__VILLAS_DATA__))); src='data.js'; }catch(e){}
+  }
+  if(!d){
+    const ls = localStorage.getItem('villas.data');
+    if(ls){ try{ d = normalise(JSON.parse(ls)); src='navigateur'; }catch(e){} }
+  }
+  if(!d){ d = normalise(JSON.parse(JSON.stringify(EMBEDDED))); src='intégré'; }
+  window.__SRC = src;
+  DATA = d;
+  state.villas = new Set(DATA.villas.map(v=>v.id));
+  if(dbxOn()){
+    setSave('Dropbox connecté','ok');
+    if(!dbxData){ try{ await dbxUpload(true); }catch(e){} }   // 1re fois : on crée le fichier
+  } else if(dirHandle){
+    setSave('Dossier connecté ('+src+')','ok');
+  } else {
+    setSave('Dropbox non connecté — ouvrez ⚙︎','dirty');
+  }
+  buildVillaChips(); render();
+  // se recharger quand on revient sur l'onglet (sync Dropbox)
+  window.addEventListener('focus', async ()=>{
+    if(dbxOn()){
+      if(dirty) return;
+      try{
+        const before = DBX.rev;
+        const d2 = await dbxDownload();
+        if(d2 && DBX.rev !== before){
+          DATA = d2; state.villas = new Set(DATA.villas.map(v=>v.id));
+          buildVillaChips(); render(); setSave('Rechargé depuis Dropbox','ok');
+        }
+      }catch(e){}
+      return;
+    }
+    if(!dirHandle || dirty) return;
+    try{
+      const fh = await dirHandle.getFileHandle('data.json',{create:false});
+      const f = await fh.getFile();
+      if(lastLoadedStamp && f.lastModified > lastLoadedStamp + 1500){
+        const d2 = normalise(JSON.parse(await f.text()));
+        DATA = d2; lastLoadedStamp = f.lastModified;
+        setSave('Rechargé (modifié ailleurs)','ok'); render();
+      }
+    }catch(e){}
+  });
+ }catch(err){
+  document.getElementById('main').innerHTML =
+    '<div class="freecard"><b>Erreur au démarrage :</b> '+esc(err&&err.message||err)+'</div>';
+  console.error(err);
+ }
+}
+
+
+/* ============================================================
+   Dropbox — OAuth PKCE + lecture / écriture directe du fichier
+   ============================================================ */
+const DBX = {
+  key   : localStorage.getItem('dbx.key')   || '',
+  refresh: localStorage.getItem('dbx.refresh') || '',
+  path  : localStorage.getItem('dbx.path')  || '/data.js',
+  root  : localStorage.getItem('dbx.root')  || '',
+  token : '', exp: 0, rev: null, email: ''
+};
+const dbxOn = () => !!(DBX.key && DBX.refresh);
+const redirectUri = () => location.origin + location.pathname.replace(/index\.html?$/i,'');
+
+function b64url(buf){
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function pkce(){
+  const a = new Uint8Array(48); crypto.getRandomValues(a);
+  const verifier = b64url(a.buffer);
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return {verifier, challenge: b64url(digest)};
+}
+
+async function dbxStart(){
+  const key = document.getElementById('dbxKey').value.trim();
+  if(!key){ alert("Collez d'abord la clé d'application Dropbox."); return; }
+  localStorage.setItem('dbx.key', key); DBX.key = key;
+  const {verifier, challenge} = await pkce();
+  sessionStorage.setItem('dbx.verifier', verifier);
+  const u = new URL('https://www.dropbox.com/oauth2/authorize');
+  u.searchParams.set('client_id', key);
+  u.searchParams.set('response_type', 'code');
+  u.searchParams.set('code_challenge', challenge);
+  u.searchParams.set('code_challenge_method', 'S256');
+  u.searchParams.set('token_access_type', 'offline');
+  u.searchParams.set('redirect_uri', redirectUri());
+  location.href = u.toString();
+}
+
+async function dbxToken(body){
+  const r = await fetch('https://api.dropboxapi.com/oauth2/token',
+    {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+     body:new URLSearchParams(body).toString()});
+  if(!r.ok) throw new Error('Dropbox : '+(await r.text()).slice(0,160));
+  return r.json();
+}
+
+async function dbxRedirectBack(){
+  const q = new URLSearchParams(location.search);
+  const code = q.get('code');
+  if(!code) return false;
+  history.replaceState({}, '', redirectUri());
+  const verifier = sessionStorage.getItem('dbx.verifier') || '';
+  try{
+    const t = await dbxToken({code, grant_type:'authorization_code', client_id:DBX.key,
+                              code_verifier:verifier, redirect_uri:redirectUri()});
+    DBX.token = t.access_token; DBX.exp = Date.now() + (t.expires_in||14000)*1000;
+    if(t.refresh_token){ DBX.refresh = t.refresh_token; localStorage.setItem('dbx.refresh', t.refresh_token); }
+    await dbxAccount();
+    return true;
+  }catch(e){ alert("Connexion Dropbox impossible.\n"+e.message); return false; }
+}
+
+async function dbxAuth(){
+  if(DBX.token && Date.now() < DBX.exp - 60000) return DBX.token;
+  if(!DBX.refresh) throw new Error('non connecté');
+  const t = await dbxToken({grant_type:'refresh_token', refresh_token:DBX.refresh, client_id:DBX.key});
+  DBX.token = t.access_token; DBX.exp = Date.now() + (t.expires_in||14000)*1000;
+  return DBX.token;
+}
+
+/* en compte Dropbox Business le dossier d'équipe vit dans un autre espace :
+   on bascule dessus une fois pour toutes */
+async function dbxAccount(){
+  const tok = await dbxAuth();
+  const r = await fetch('https://api.dropboxapi.com/2/users/get_current_account',
+    {method:'POST', headers:{Authorization:'Bearer '+tok}});
+  if(r.ok){
+    const a = await r.json();
+    DBX.email = a.email || '';
+    const ri = a.root_info || {};
+    if(ri.root_namespace_id && ri.root_namespace_id !== ri.home_namespace_id){
+      DBX.root = ri.root_namespace_id; localStorage.setItem('dbx.root', DBX.root);
+    }
+  }
+}
+function dbxHeaders(extra){
+  const h = Object.assign({Authorization:'Bearer '+DBX.token}, extra||{});
+  if(DBX.root) h['Dropbox-API-Path-Root'] = JSON.stringify({'.tag':'root', root:DBX.root});
+  return h;
+}
+
+async function dbxDownload(){
+  await dbxAuth();
+  const r = await fetch('https://content.dropboxapi.com/2/files/download',
+    {method:'POST', headers:dbxHeaders({'Dropbox-API-Arg':JSON.stringify({path:DBX.path})})});
+  if(!r.ok){
+    if(r.status===409) return null;            // fichier absent
+    throw new Error((await r.text()).slice(0,160));
+  }
+  const meta = JSON.parse(r.headers.get('Dropbox-API-Result')||'{}');
+  DBX.rev = meta.rev || null;
+  return normalise(unwrap(await r.text()));
+}
+
+async function dbxUpload(force){
+  await dbxAuth();
+  const mode = (DBX.rev && !force) ? {'.tag':'update', update:DBX.rev} : {'.tag':'overwrite'};
+  const r = await fetch('https://content.dropboxapi.com/2/files/upload',
+    {method:'POST',
+     headers:dbxHeaders({'Content-Type':'application/octet-stream',
+       'Dropbox-API-Arg':JSON.stringify({path:DBX.path, mode, autorename:false, mute:true})}),
+     body:new Blob([wrap(DATA)],{type:'application/octet-stream'})});
+  const txt = await r.text();
+  if(!r.ok){
+    if(txt.includes('conflict')){
+      if(confirm("⚠️ Le fichier a été modifié ailleurs (autre appareil).\n\nOK = écraser avec ma version.\nAnnuler = ne rien envoyer (rechargez d'abord).")){
+        return dbxUpload(true);
+      }
+      return false;
+    }
+    throw new Error(txt.slice(0,160));
+  }
+  DBX.rev = JSON.parse(txt).rev || null;
+  return true;
+}
+
+async function dbxSearchFile(){
+  await dbxAuth();
+  const r = await fetch('https://api.dropboxapi.com/2/files/search_v2',
+    {method:'POST', headers:dbxHeaders({'Content-Type':'application/json'}),
+     body:JSON.stringify({query:'data.js', options:{max_results:20, file_status:'active'}})});
+  if(!r.ok){ alert('Recherche impossible.'); return; }
+  const res = (await r.json()).matches
+    .map(m=>m.metadata.metadata).filter(x=>x && x['.tag']==='file');
+  if(!res.length){ alert("Aucun fichier « data.js » trouvé dans votre Dropbox."); return; }
+  const list = res.map((f,i)=>(i+1)+'. '+f.path_display).join('\n');
+  const pick = prompt("Quel fichier utiliser ? Tapez son numéro :\n\n"+list, '1');
+  const i = parseInt(pick,10)-1;
+  if(isNaN(i) || !res[i]) return;
+  DBX.path = res[i].path_lower; DBX.rev = null;
+  localStorage.setItem('dbx.path', DBX.path);
+  document.getElementById('dbxPath').textContent = DBX.path;
+  const d = await dbxDownload();
+  if(d){ DATA=d; state.villas=new Set(DATA.villas.map(v=>v.id)); buildVillaChips(); render();
+         setSave('Chargé depuis Dropbox','ok'); }
+}
+
+function dbxPaint(){
+  const setup = document.getElementById('dbxSetup'), linked = document.getElementById('dbxLinked');
+  const st = document.getElementById('dbxState');
+  document.getElementById('dbxRedirect').textContent = redirectUri();
+  document.getElementById('dbxKey').value = DBX.key;
+  if(dbxOn()){
+    setup.style.display='none'; linked.style.display='';
+    st.innerHTML = '✅ <b>Connecté'+(DBX.email?' ('+esc(DBX.email)+')':'')+'.</b> '
+                 + 'Chaque modification part directement dans votre Dropbox, sur tous vos appareils.';
+    document.getElementById('dbxPath').textContent = DBX.path;
+  } else {
+    setup.style.display=''; linked.style.display='none';
+    st.innerHTML = location.protocol==='file:'
+      ? '⚠️ Cette page est ouverte comme un fichier local. La connexion Dropbox ne fonctionne que depuis l\'adresse web du calendrier.'
+      : 'Connectez votre Dropbox pour modifier le calendrier depuis n\'importe quel appareil, téléphone compris.';
+  }
+}
+
+/* ============================================================
+   Filtres / rendu
+   ============================================================ */
+function villaName(id){ const v=DATA.villas.find(v=>v.id===id); return v?v.name:('Villa '+id); }
+
+function buildVillaChips(){
+  const c=document.getElementById('villaChips');
+  c.innerHTML = DATA.villas.map(v=>`<span class="chip on" data-villa="${v.id}">${v.name}</span>`).join(' ');
+  c.querySelectorAll('[data-villa]').forEach(el=>el.onclick=()=>{
+    const id=el.dataset.villa;
+    if(state.villas.has(id)){ state.villas.delete(id); el.classList.replace('on','off'); }
+    else { state.villas.add(id); el.classList.replace('off','on'); }
+    render();
+  });
+}
+
+function visible(b){
+  if(!state.src.has(b.source)) return false;
+  if(!state.villas.has(b.villa)) return false;
+  if(state.q){
+    const q=state.q.toLowerCase();
+    if(!((b.client||'').toLowerCase().includes(q) || (b.notes||'').toLowerCase().includes(q) ||
+         (b.raw||'').toLowerCase().includes(q))) return false;
+  }
+  return true;
+}
+const overlaps = (b,a,z) => b.start < z && b.end > a;
+
+function render(){
+  if(!DATA.villas.length || !DATA.bookings.length){
+    document.getElementById('period').textContent = '';
+    const viaFile = location.protocol==='file:' || location.protocol==='content:';
+    document.getElementById('main').innerHTML = `
+      <div class="freecard" style="max-width:560px;margin:24px auto;padding:20px 22px;line-height:1.6">
+        <h3 style="margin:0 0 10px;font-size:16px">Aucune donnée chargée</h3>
+        ${viaFile ? `
+          <p style="margin:0 0 10px"><b>Ce fichier a été ouvert depuis Dropbox.</b> Ouvert de cette façon,
+          le calendrier ne peut ni retrouver vos réservations ni les enregistrer.</p>
+          <p style="margin:0 0 10px">Sur le téléphone, il faut ouvrir le calendrier
+          <b>par son adresse web</b>, puis le connecter à Dropbox une fois.
+          Les étapes sont dans <b>GUIDE.md</b>, parties A et B.</p>`
+        : `
+          <p style="margin:0 0 10px">Connectez votre Dropbox pour charger vos réservations :
+          bouton <b>⚙︎</b> en haut à droite → <b>Connecter mon Dropbox</b>,
+          puis <b>🔎 Choisir le fichier</b>.</p>`}
+        <button class="btn primary" onclick="document.getElementById('menu').click()"
+          style="margin-top:6px">⚙︎ Ouvrir les réglages</button>
+      </div>`;
+    return;
+  }
+  document.getElementById('period').textContent =
+    state.view==='liste' ? 'Toutes les réservations' : MOIS[state.m]+' '+state.y;
+  const main=document.getElementById('main');
+  if(state.view==='mois') main.innerHTML = viewMois();
+  else if(state.view==='dispo') main.innerHTML = viewDispo();
+  else main.innerHTML = viewListe();
+  main.querySelectorAll('[data-mv]').forEach(el=>el.onclick=()=>{ state.mVilla = el.dataset.mv; render(); });
+  main.querySelectorAll('[data-id]').forEach(el=>el.onclick=()=>openEdit(el.dataset.id));
+}
+
+/* ---------- Planning mensuel (colonnes = villas, lignes = jours) ---------- */
+function viewMois(){
+  const y=state.y, m=state.m;
+  const nd = new Date(y,m+1,0).getDate();
+  const first = y+'-'+pad(m+1)+'-01', after = iso(new Date(y,m+1,1));
+  const MOB = window.innerWidth<=720;
+  let vl = DATA.villas.filter(v=>state.villas.has(v.id));
+  let switcher = '';
+  if(MOB){
+    const all = DATA.villas;
+    if(!all.some(v=>v.id===state.mVilla)) state.mVilla = all.length?all[0].id:'';
+    switcher = '<div class="vswitch">'+all.map(v=>
+      `<button data-mv="${v.id}" class="${v.id===state.mVilla?'on':''}">${esc(v.name.replace(/^Villa\s*/i,'Villa '))}</button>`).join('')+'</div>';
+    vl = all.filter(v=>v.id===state.mVilla);
+  }
+  if(!vl.length) return '<div class="freecard">Aucune villa sélectionnée.</div>';
+  const cols = (MOB?'52px':'110px')+' repeat('+vl.length+',minmax('+(MOB?0:150)+'px,1fr))';
+  const ROW = MOB ? 52 : 42;
+
+  let head = `<div class="plan-head" style="grid-template-columns:${cols}"><div>Jour</div>`;
+  vl.forEach(v=>head+=`<div>${v.name}</div>`); head+='</div>';
+
+  let daycol = '<div class="daycol">';
+  for(let d=1; d<=nd; d++){
+    const dt = new Date(y,m,d), wd = dt.getDay();
+    const ds = y+'-'+pad(m+1)+'-'+pad(d);
+    daycol += `<div class="day${wd===0||wd===6?' we':''}${ds===todayISO?' today':''}">
+       <span class="n">${d}</span><span>${MOB?JOURS3[wd][0].toUpperCase():JOURS3[wd]}</span></div>`;
+  }
+  daycol+='</div>';
+
+  let body = `<div class="plan-body" style="grid-template-columns:${cols}">${daycol}`;
+  vl.forEach(v=>{
+    const list = DATA.bookings.filter(b=>b.villa===v.id && visible(b) && overlaps(b,first,after))
+                             .sort((a,b)=>a.start.localeCompare(b.start));
+    // jours où un client sort (sortie visible dans le mois affiché)
+    const depDays = new Set(list.filter(b=>b.end>first && b.end<after).map(b=>parse(b.end).getDate()));
+    let grid='<div class="vgrid">';
+    for(let d=1; d<=nd; d++){ const wd=new Date(y,m,d).getDay(); grid+=`<div class="${wd===0||wd===6?'we':''}"></div>`; }
+    grid+='</div>';
+
+    const HALF = ROW/2;
+    let blocks='';
+    list.forEach(b=>{
+      const contBefore = b.start < first;          // arrivée le mois précédent
+      const endInMonth = b.end < after;            // sortie visible ce mois-ci
+      const sd = contBefore ? 1 : parse(b.start).getDate();
+      // le bloc démarre au milieu du jour d'entrée et s'arrête au milieu du jour de sortie
+      const top    = contBefore ? 1 : (sd-1)*ROW + HALF;
+      const bottom = endInMonth ? (parse(b.end).getDate()-1)*ROW + HALF : nd*ROW - 1;
+      const h = Math.max(20, bottom - top);
+      const short = h < 58;
+      const arriveHere = !contBefore;
+      const nm = b.kind==='event' ? (EVT_LABEL[b.eventType]||'Intervention')+(b.client&&b.client!=='Événement'?' — '+b.client:'') : b.client;
+      let inner = `<div class="nm">${contBefore?'⟵ suite · ':''}${esc(nm)}</div>`;
+      if(!short){
+        const trav = b.nb? `👥 ${b.nb}` : (b.nbDetail?('👥 '+esc(b.nbDetail)):'');
+        inner += `<div class="ln">${trav}${trav?' · ':''}${fmtFR(b.start)} → ${fmtFR(b.end)} · ${nights(b.start,b.end)} nuit${nights(b.start,b.end)>1?'s':''}</div>`;
+        if(b.kind!=='event'){
+          inner += `<div class="mny">${b.total!=null?'Total '+money(b.total,b.currency):'Total —'}`
+                +  `${b.avance!=null?' · Av. '+money(b.avance,b.currency):''}</div>`;
+          if(b.reste!=null && b.reste>0) inner += `<div class="mny reste">Reste ${money(b.reste,b.currency)}</div>`;
+          else if(b.reste===0) inner += `<div class="mny" style="color:#1f8f4a">Soldé ✓</div>`;
+        }
+        if(b.notes) inner += `<div class="ln" style="opacity:.75">📝 ${esc(b.notes)}</div>`;
+      } else if(b.kind!=='event' && b.reste!=null && b.reste>0){
+        inner += `<div class="mny reste">Reste ${money(b.reste,b.currency)}</div>`;
+      }
+      const tip = tooltip(b);
+      const foot = endInMonth
+        ? `<div class="out">← SORTIE ${fmtFR(b.end)} · ${JOURS3[parse(b.end).getDay()]}</div>`
+        : `<div class="out next">⟶ sortie ${fmtFR(b.end)} (mois suivant)</div>`;
+      blocks += `<div class="stay s-${b.source}${short?' short':''} hasout" data-id="${b.id}" title="${tip}"
+                   style="top:${top}px;height:${h}px">
+                   ${arriveHere?'<span class="tag">→ ENTRÉE</span>':''}${inner}${foot}</div>`;
+      // départ et arrivée le même jour : le jour est coupé en deux
+      if(arriveHere && depDays.has(sd)){
+        blocks += `<div class="turn" style="top:${(sd-1)*ROW + HALF - 1}px"></div>`
+               +  `<div class="turnlbl" style="top:${(sd-1)*ROW + HALF - 1}px">⇄ même jour</div>`;
+      }
+    });
+    body += `<div class="vcol">${grid}${blocks}</div>`;
+  });
+  body += '</div>';
+  const height = nd*ROW + 4;
+  return switcher+`<div class="plan">${head}<div style="min-height:${height}px">${body}</div></div>
+    <div style="margin-top:8px;font-size:11.5px;color:var(--muted)">
+      Chaque fiche va du <b>milieu du jour d'entrée</b> au <b>milieu du jour de sortie</b>. Quand un client part et
+      qu'un autre arrive le même jour, la journée est coupée en deux — trait rouge « ⇄ même jour ».
+    </div>`;
+}
+
+function tooltip(b){
+  const L=[];
+  L.push((b.kind==='event'?(EVT_LABEL[b.eventType]||'Intervention'):b.client));
+  L.push(villaName(b.villa)+' · '+SRC_LABEL[b.source]);
+  L.push('Entrée '+fmtFRY(b.start)+'  →  Sortie '+fmtFRY(b.end)+' ('+nights(b.start,b.end)+' nuits)');
+  if(b.nb||b.nbDetail) L.push('Voyageurs : '+(b.nb||'')+(b.nbDetail?' ('+b.nbDetail+')':''));
+  if(b.total!=null) L.push('Total : '+money(b.total,b.currency));
+  if(b.avance!=null) L.push('Avance : '+money(b.avance,b.currency));
+  if(b.reste!=null) L.push('Reste : '+money(b.reste,b.currency));
+  if(b.notes) L.push('Note : '+b.notes);
+  if(b.endEstimated) L.push('⚠︎ date de sortie estimée lors de l\'import');
+  return esc(L.join('\n'));
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- Vue disponibilités ---------- */
+function viewDispo(){
+  const MOB = window.innerWidth<=720;
+  const start = new Date(state.y, state.m, 1);
+  const end = new Date(state.y, state.m+(MOB?1:3), 0);
+  const days=[]; for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(iso(d));
+  const vl = DATA.villas.filter(v=>state.villas.has(v.id));
+
+  let th='<tr><th class="vn">Villa</th>';
+  days.forEach((ds,i)=>{ const d=parse(ds);
+    th += `<th class="${d.getDate()===1?'m0':''}">${d.getDate()===1||d.getDate()%5===0?d.getDate():''}</th>`; });
+  th+='</tr>';
+  let th2='<tr><th class="vn"></th>';
+  let i=0; while(i<days.length){ const d=parse(days[i]); const rest=days.filter(x=>parse(x).getMonth()===d.getMonth()).length;
+    th2+=`<th colspan="${rest}" style="text-align:left;padding-left:4px;font-size:11px;color:#1d2733">${MOIS[d.getMonth()]} ${d.getFullYear()}</th>`; i+=rest; }
+  th2+='</tr>';
+
+  let rows='';
+  vl.forEach(v=>{
+    rows += `<tr><td class="vn">${v.name}</td>`;
+    days.forEach(ds=>{
+      const d=parse(ds), we=d.getDay()===0||d.getDay()===6;
+      const b = DATA.bookings.find(b=>b.villa===v.id && visible(b) && b.start<=ds && b.end>ds);
+      let seg='';
+      if(b){
+        const isFirst = b.start===ds || ds===days[0];
+        const nm = b.kind==='event'?(EVT_LABEL[b.eventType]||'Intervention'):b.client;
+        seg = `<div class="seg s-${b.source}" data-id="${b.id}" title="${tooltip(b)}">${isFirst?'<div class="lbl">'+esc(nm)+'</div>':''}</div>`;
+      }
+      rows += `<td class="cell${we?' we':''}${d.getDate()===1?' m0':''}">${seg}</td>`;
+    });
+    rows += '</tr>';
+  });
+
+  // périodes libres
+  let free='';
+  vl.forEach(v=>{
+    const gaps=[]; let cur=null;
+    days.forEach(ds=>{
+      const busy = DATA.bookings.some(b=>b.villa===v.id && state.src.has(b.source) && b.start<=ds && b.end>ds);
+      if(!busy){ if(!cur) cur={a:ds,b:ds}; else cur.b=ds; }
+      else if(cur){ gaps.push(cur); cur=null; }
+    });
+    if(cur) gaps.push(cur);
+    const big = gaps.filter(g=>nights(g.a,g.b)>=1);
+    free += `<div class="freecard"><h4>${v.name} — périodes libres</h4><ul>${
+      big.length? big.map(g=>`<li>${fmtFRY(g.a)} → ${fmtFRY(addD(g.b,1))} <b>(${nights(g.a,g.b)+1} j)</b></li>`).join('')
+                : '<li style="color:#b3261e">Complet sur la période</li>'}</ul></div>`;
+  });
+
+  return `<div class="gantt"><table>${th2}${th}${rows}</table></div>
+          <div class="freebox">${free}</div>`;
+}
+
+/* ---------- Vue liste ---------- */
+function viewListe(){
+  const list = DATA.bookings.filter(visible).sort((a,b)=>b.start.localeCompare(a.start));
+  const resa = list.filter(b=>b.kind!=='event');
+  const curs = [...new Set(resa.map(b=>b.currency||'EUR'))].sort((a,b)=>(a==='EUR'?-1:b==='EUR'?1:a.localeCompare(b)));
+  const sum = (c,f) => resa.filter(b=>(b.currency||'EUR')===c).reduce((s,b)=>s+(b[f]||0),0);
+  let cards = `<div class="sum"><span>Réservations</span><b>${resa.length}</b></div>
+     <div class="sum"><span>Événements</span><b>${list.filter(b=>b.kind==='event').length}</b></div>`;
+  curs.forEach(c=>{
+    cards += `<div class="sum"><span>Total ${CUR_SYM[c]||c}</span><b>${money(sum(c,'total'),c)}</b></div>
+      <div class="sum"><span>Avances ${CUR_SYM[c]||c}</span><b>${money(sum(c,'avance'),c)}</b></div>
+      <div class="sum"><span>Reste ${CUR_SYM[c]||c}</span><b style="color:#b3261e">${money(sum(c,'reste'),c)}</b></div>`;
+  });
+  const head = `<div class="sums">${cards}</div>`;
+  if(window.innerWidth<=720){
+    const LIM = 120;
+    const shown = list.slice(0, LIM);
+    const more = list.length > LIM
+      ? `<div class="freecard" style="text-align:center">${list.length-LIM} fiche(s) plus anciennes non affichées.<br>
+         <span style="color:var(--muted);font-size:12px">Utilisez la recherche en haut pour les retrouver.</span></div>` : '';
+    const cards = shown.map(b=>{
+      const nm = b.kind==='event' ? (EVT_LABEL[b.eventType]||'Intervention')+(b.client?' — '+b.client:'') : b.client;
+      return `<div class="card s-${b.source}" data-id="${b.id}">
+        <div class="t"><b>${esc(nm)}</b><span style="font-size:11px;color:var(--muted);white-space:nowrap">${villaName(b.villa)}</span></div>
+        <div class="d">${fmtFRY(b.start)} → ${fmtFRY(b.end)} · ${nights(b.start,b.end)} nuit${nights(b.start,b.end)>1?'s':''}${b.nb?' · 👥 '+b.nb:''}</div>
+        <div class="m">${b.total!=null?money(b.total,b.currency):'—'}${b.avance!=null?' · Av. '+money(b.avance,b.currency):''}
+          ${b.reste>0?'<span style="color:#b3261e"> · Reste '+money(b.reste,b.currency)+'</span>':(b.reste===0?'<span style="color:#1f8f4a"> · Soldé ✓</span>':'')}</div>
+        <div class="d" style="margin-top:4px"><span class="pill s-${b.source}">${SRC_LABEL[b.source]}</span>
+          ${b.notes?' <span style="opacity:.7">📝 '+esc(b.notes.slice(0,60))+'</span>':''}</div>
+      </div>`;}).join('');
+    return head+`<div class="cards">${cards}${more}</div>`;
+  }
+  const rows = list.map(b=>`<tr data-id="${b.id}">
+    <td>${fmtFRY(b.start)}</td><td>${fmtFRY(b.end)}</td><td>${nights(b.start,b.end)}</td>
+    <td><b>${esc(b.kind==='event'?(EVT_LABEL[b.eventType]||'Intervention'):b.client)}</b></td>
+    <td>${villaName(b.villa)}</td>
+    <td><span class="pill s-${b.source}">${SRC_LABEL[b.source]}</span></td>
+    <td>${b.nb??'—'}</td>
+    <td>${b.total!=null?money(b.total,b.currency):'—'}</td>
+    <td>${b.avance!=null?money(b.avance,b.currency):'—'}</td>
+    <td style="color:${b.reste>0?'#b3261e':'#1f8f4a'};font-weight:700">${b.reste!=null?money(b.reste,b.currency):'—'}</td>
+    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc(b.notes||'')}</td></tr>`).join('');
+  return head+`<div class="tablewrap"><table class="list"><thead><tr>
+    <th>Entrée</th><th>Sortie</th><th>Nuits</th><th>Client</th><th>Villa</th><th>Origine</th>
+    <th>Voy.</th><th>Total</th><th>Avance</th><th>Reste</th><th>Remarques</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+/* ============================================================
+   Modale d'édition
+   ============================================================ */
+function fillVillas(){
+  document.getElementById('fVilla').innerHTML = DATA.villas.map(v=>`<option value="${v.id}">${v.name}</option>`).join('');
+}
+let curSrc='booking';
+function setSrc(s){
+  curSrc=s;
+  document.querySelectorAll('#srcPick button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
+  const ev = s==='interne';
+  document.getElementById('wEvent').style.display = ev?'':'none';
+  ['wNb','wNbD','wTot','wCur','wAv','wRe'].forEach(id=>document.getElementById(id).style.display = ev?'none':'');
+  document.getElementById('mTitle').textContent = ev?'Événement interne':'Réservation';
+}
+document.querySelectorAll('#srcPick button').forEach(b=>b.onclick=()=>setSrc(b.dataset.s));
+
+function openEdit(id){
+  fillVillas();
+  const b = DATA.bookings.find(x=>x.id===id);
+  state.editing = id||null;
+  const g=i=>document.getElementById(i);
+  g('fErr').textContent='';
+  if(b){
+    setSrc(b.source); g('fVilla').value=b.villa; g('fEventType').value=b.eventType||'travaux';
+    g('fClient').value=b.client||''; g('fStart').value=b.start; g('fEnd').value=b.end;
+    g('fNb').value=b.nb??''; g('fNbD').value=b.nbDetail||''; g('fTotal').value=b.total??'';
+    g('fCur').value=b.currency||'EUR'; g('fAv').value=b.avance??''; g('fRe').value=b.reste??'';
+    g('fNotes').value=b.notes||''; g('mDel').style.display='';
+  }else{
+    setSrc(state.newKind==='event'?'interne':'booking');
+    g('fVilla').value=DATA.villas[0].id; g('fClient').value=''; g('fEventType').value='travaux';
+    const d0 = state.y+'-'+pad(state.m+1)+'-01';
+    g('fStart').value=d0; g('fEnd').value=addD(d0,1);
+    g('fNb').value=''; g('fNbD').value=''; g('fTotal').value=''; g('fCur').value='EUR';
+    g('fAv').value=''; g('fRe').value=''; g('fNotes').value=''; g('mDel').style.display='none';
+  }
+  document.getElementById('mask').classList.add('on');
+}
+function closeEdit(){ document.getElementById('mask').classList.remove('on'); state.editing=null; }
+
+['fTotal','fAv'].forEach(id=>document.getElementById(id).oninput=()=>{
+  const t=parseFloat(document.getElementById('fTotal').value);
+  const a=parseFloat(document.getElementById('fAv').value);
+  if(!isNaN(t)) document.getElementById('fRe').value = (t-(isNaN(a)?0:a)).toFixed(2);
+});
+
+document.getElementById('mSave').onclick = async ()=>{
+  if(READONLY) return;
+  const g=i=>document.getElementById(i), num=v=>v===''?null:parseFloat(v);
+  const s=g('fStart').value, e=g('fEnd').value;
+  if(!s||!e){ g('fErr').textContent='Indiquez les dates d\'entrée et de sortie.'; return; }
+  if(e<=s){ g('fErr').textContent='La date de sortie doit être après la date d\'entrée.'; return; }
+  const isEv = curSrc==='interne';
+  if(!isEv && !g('fClient').value.trim()){ g('fErr').textContent='Indiquez le nom du client.'; return; }
+  const villa=g('fVilla').value;
+  const clash = DATA.bookings.find(b=>b.id!==state.editing && b.villa===villa && b.kind!=='event' && !isEv && b.start<e && b.end>s);
+  if(clash && !confirm('⚠️ Chevauchement avec « '+clash.client+' » ('+fmtFRY(clash.start)+' → '+fmtFRY(clash.end)+').\nEnregistrer quand même ?')) return;
+  const rec = {
+    id: state.editing || ('b'+Date.now().toString(36)),
+    villa, kind: isEv?'event':'booking', source: curSrc,
+    eventType: isEv? g('fEventType').value : null,
+    client: g('fClient').value.trim() || (isEv?(EVT_LABEL[g('fEventType').value]):''),
+    start:s, end:e,
+    nb: isEv?null:num(g('fNb').value), nbDetail: isEv?'':g('fNbD').value.trim(),
+    total: isEv?null:num(g('fTotal').value), currency:g('fCur').value,
+    avance: isEv?null:num(g('fAv').value), reste: isEv?null:num(g('fRe').value),
+    notes:g('fNotes').value.trim(), raw:'', endEstimated:false
+  };
+  const i = DATA.bookings.findIndex(b=>b.id===rec.id);
+  if(i>=0) DATA.bookings[i]=rec; else DATA.bookings.push(rec);
+  closeEdit(); await saveNow(); render();
+};
+document.getElementById('mDel').onclick = async ()=>{
+  if(READONLY || !state.editing) return;
+  const b=DATA.bookings.find(x=>x.id===state.editing);
+  if(!confirm('Supprimer définitivement « '+(b.client||'cet élément')+' » ?')) return;
+  DATA.bookings = DATA.bookings.filter(x=>x.id!==state.editing);
+  closeEdit(); await saveNow(); render();
+};
+document.getElementById('mCancel').onclick = closeEdit;
+document.getElementById('mask').onclick = e=>{ if(e.target.id==='mask') closeEdit(); };
+
+/* ============================================================
+   Barre d'outils
+   ============================================================ */
+document.getElementById('prev').onclick = ()=>{ state.m--; if(state.m<0){state.m=11;state.y--;} render(); };
+document.getElementById('next').onclick = ()=>{ state.m++; if(state.m>11){state.m=0;state.y++;} render(); };
+document.getElementById('today').onclick = ()=>{ const d=new Date(); state.y=d.getFullYear(); state.m=d.getMonth(); render(); };
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); state.view=b.dataset.view; render();
+});
+document.querySelectorAll('.chip[data-src]').forEach(el=>el.onclick=()=>{
+  const s=el.dataset.src;
+  if(state.src.has(s)){ state.src.delete(s); el.classList.replace('on','off'); }
+  else { state.src.add(s); el.classList.replace('off','on'); }
+  render();
+});
+let tq; document.getElementById('search').oninput = e=>{ clearTimeout(tq); tq=setTimeout(()=>{ state.q=e.target.value.trim(); render(); },200); };
+document.getElementById('add').onclick = ()=>{ state.newKind='booking'; openEdit(null); };
+document.getElementById('addEvent').onclick = ()=>{ state.newKind='event'; openEdit(null); };
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){ closeEdit(); document.getElementById('mask2').classList.remove('on'); }
+  if(document.activeElement && ['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if(e.key==='ArrowLeft') document.getElementById('prev').click();
+  if(e.key==='ArrowRight') document.getElementById('next').click();
+});
+
+/* --- menu fichier --- */
+const m2=document.getElementById('mask2');
+document.getElementById('menu').onclick = ()=>{
+  dbxPaint();
+  document.getElementById('syncState').innerHTML = dbxOn()
+    ? 'Sauvegarde conseillée de temps en temps : « télécharger data.js » et rangez le fichier ailleurs que dans le dossier du calendrier.'
+    : '';
+  document.getElementById('syncState').innerHTML += '<div style="margin-top:8px;color:#6b7787;font-size:11.5px">Version du fichier : <b>'+BUILD+'</b></div>';
+  m2.classList.add('on');
+};
+document.getElementById('dbxConnect').onclick = dbxStart;
+document.getElementById('dbxPull').onclick = async ()=>{
+  try{
+    const d = await dbxDownload();
+    if(!d){ alert('Fichier introuvable dans Dropbox.'); return; }
+    DATA = d; state.villas = new Set(DATA.villas.map(v=>v.id));
+    buildVillaChips(); render(); setSave('Rechargé depuis Dropbox','ok'); m2.classList.remove('on');
+  }catch(e){ alert('Lecture impossible : '+e.message); }
+};
+document.getElementById('dbxPush').onclick = async ()=>{ if(await saveNow()) m2.classList.remove('on'); };
+document.getElementById('dbxFind').onclick = dbxSearchFile;
+document.getElementById('dbxOut').onclick = ()=>{
+  if(!confirm('Déconnecter ce Dropbox de cet appareil ?')) return;
+  ['dbx.refresh','dbx.root'].forEach(k=>localStorage.removeItem(k));
+  DBX.refresh=''; DBX.token=''; DBX.root='';
+  dbxPaint(); setSave('Dropbox déconnecté','dirty');
+};
+document.getElementById('m2Close').onclick = ()=>m2.classList.remove('on');
+m2.onclick = e=>{ if(e.target.id==='mask2') m2.classList.remove('on'); };
+function saveFile(){
+  DATA.saved = new Date().toISOString();
+  dl(new Blob([wrap(DATA)],{type:'text/javascript'}), DATA_FILE);
+}
+document.getElementById('expJson').onclick = saveFile;
+document.getElementById('impJson').onclick = ()=>document.getElementById('fileIn').click();
+document.getElementById('fileIn').onchange = async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    DATA = normalise(unwrap(await f.text()));
+    state.villas=new Set(DATA.villas.map(v=>v.id)); buildVillaChips();
+    await saveNow(true); render(); m2.classList.remove('on');
+  }catch(err){ alert('Fichier illisible.'); }
+};
+document.getElementById('expCsv').onclick = ()=>{
+  const rows=[['Villa','Origine','Type','Client','Entree','Sortie','Nuits','Voyageurs','Total','Devise','Avance','Reste','Remarques']];
+  DATA.bookings.filter(visible).sort((a,b)=>a.start.localeCompare(b.start)).forEach(b=>rows.push([
+    villaName(b.villa), SRC_LABEL[b.source], b.kind==='event'?(EVT_LABEL[b.eventType]||''):'Réservation',
+    b.client, b.start, b.end, nights(b.start,b.end), b.nb??'', b.total??'', b.currency, b.avance??'', b.reste??'', b.notes||'']));
+  const csv='﻿'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n');
+  dl(new Blob([csv],{type:'text/csv'}),'reservations.csv');
+};
+document.getElementById('prt').onclick = ()=>{ m2.classList.remove('on'); setTimeout(()=>window.print(),150); };
+function dl(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); }
+
+window.addEventListener('beforeunload', e=>{ if(dirty && !dirHandle){ e.preventDefault(); e.returnValue=''; } });
+setInterval(()=>{ if(dirty && !dirHandle) document.title='● Non enregistré — Calendrier des Villas'; }, 4000);
+let rz; window.addEventListener('resize', ()=>{ clearTimeout(rz); rz=setTimeout(render,180); });
+
+/* balayage horizontal = mois précédent / suivant (téléphone) */
+(function(){
+  let x0=0, y0=0, t0=0;
+  const el = document.getElementById('main');
+  el.addEventListener('touchstart', e=>{
+    if(e.touches.length!==1) return;
+    x0=e.touches[0].clientX; y0=e.touches[0].clientY; t0=Date.now();
+  }, {passive:true});
+  el.addEventListener('touchend', e=>{
+    if(state.view==='liste' || !t0) return;
+    const t=e.changedTouches[0];
+    const dx=t.clientX-x0, dy=t.clientY-y0;
+    t0=0;
+    if(Math.abs(dx)<70 || Math.abs(dx)<Math.abs(dy)*2) return;
+    document.getElementById(dx<0?'next':'prev').click();
+  }, {passive:true});
+})();
+
+boot();
+</script>
+</body>
+</html>
