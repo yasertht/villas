@@ -371,7 +371,7 @@ body.ro #add, body.ro #addEvent, body.ro #mSave, body.ro #mDel, body.ro #impJson
 const EMBEDDED = /*<<DATA*/{"version":1,"villas":[],"bookings":[]}/*DATA>>*/;
 let READONLY = /*<<RO*/false/*RO>>*/;
 
-const BUILD = 'v3.3';
+const BUILD = 'v3.4';
 const SRC_LABEL = {booking:'Booking.com', airbnb:'Airbnb', direct:'Direct', interne:'Interne', apreciser:'À préciser'};
 const EVT_LABEL = {travaux:'Travaux', maintenance:'Maintenance', insectes:'Traitement insectes',
                    famille:'Réservation familiale', nettoyage:'Nettoyage exceptionnel', autre:'Intervention'};
@@ -513,6 +513,7 @@ async function boot(){
     try{
       await dbxAccount();
       dbxData = await dbxDownload();
+      if(!dbxData) dbxData = await dbxAdopt();   // 1re fois sur cet appareil
     }catch(e){ console.warn('Dropbox', e); }
   }
   dirHandle = await idbGet('dir');
@@ -537,8 +538,8 @@ async function boot(){
   DATA = d;
   state.villas = new Set(DATA.villas.map(v=>v.id));
   if(dbxOn()){
-    setSave('Dropbox connecté','ok');
-    if(!dbxData){ try{ await dbxUpload(true); }catch(e){} }   // 1re fois : on crée le fichier
+    if(dbxData) setSave('Dropbox connecté','ok');
+    else setSave('Fichier introuvable — ⚙︎ → 🔎 Choisir le fichier','bad');
   } else if(dirHandle){
     setSave('Dossier connecté ('+src+')','ok');
   } else {
@@ -704,6 +705,39 @@ async function dbxUpload(force){
   }
   DBX.rev = JSON.parse(txt).rev || null;
   return true;
+}
+
+async function dbxFind(silent){
+  await dbxAuth();
+  const r = await fetch('https://api.dropboxapi.com/2/files/search_v2',
+    {method:'POST', headers:dbxHeaders({'Content-Type':'application/json'}),
+     body:JSON.stringify({query:'data.js', options:{max_results:20, file_status:'active'}})});
+  if(!r.ok) return null;
+  return (await r.json()).matches
+    .map(m=>m.metadata.metadata).filter(x=>x && x['.tag']==='file');
+}
+
+/* nouvel appareil : le chemin n'est pas encore connu, on retrouve le fichier tout seul */
+async function dbxAdopt(){
+  let res = null;
+  try{ res = await dbxFind(true); }catch(e){ return null; }
+  if(!res || !res.length) return null;
+  let pick = res[0];
+  if(res.length > 1){
+    const pref = res.filter(f=>/CALENDRIER VILLAS/i.test(f.path_display||''));
+    if(pref.length === 1) pick = pref[0];
+    else {
+      const list = res.map((f,i)=>(i+1)+'. '+f.path_display).join('\n');
+      const n = prompt('Plusieurs fichiers « data.js » trouvés dans ce Dropbox.\n'
+        + 'Tapez le numéro de celui du calendrier :\n\n'+list, '1');
+      const i = parseInt(n,10)-1;
+      if(isNaN(i) || !res[i]) return null;
+      pick = res[i];
+    }
+  }
+  DBX.path = pick.path_lower; DBX.rev = null;
+  localStorage.setItem('dbx.path', DBX.path);
+  try{ return await dbxDownload(); }catch(e){ return null; }
 }
 
 async function dbxSearchFile(){
