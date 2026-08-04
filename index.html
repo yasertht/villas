@@ -171,7 +171,14 @@ table.list tr:hover td{background:#f7fbff;cursor:pointer}
 .err{color:#b3261e;font-size:12px;font-weight:600}
 .hint{font-size:11px;color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0}
 
-body.ro #add, body.ro #addEvent, body.ro #mSave, body.ro #mDel, body.ro #impJson{display:none!important}
+body.ro #add, body.ro #addEvent, body.ro #mSave, body.ro #mDel, body.ro #impJson,
+body.ro #villaBox{display:none!important}
+.vrow{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.vrow input{flex:1;min-width:0;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-weight:600}
+.vrow button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 9px;line-height:1;font-size:13px}
+.vrow button:hover{background:#eef2f7}
+.vrow .del{color:#a32020;border-color:#f0c2c2;background:#fff5f5}
+.vrow .cnt{font-size:11px;color:var(--muted);white-space:nowrap;min-width:52px;text-align:right}
 /* ---------- vues téléphone ---------- */
 .vswitch{display:none;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px}
 .vswitch button{flex:1 0 auto;border:1px solid var(--line);background:#fff;border-radius:9px;
@@ -352,6 +359,14 @@ body.ro #add, body.ro #addEvent, body.ro #mSave, body.ro #mDel, body.ro #impJson
           </div>
         </div>
       </div>
+      <div id="villaBox" style="border:1px solid var(--line);border-radius:10px;padding:12px">
+        <div style="font-weight:800;font-size:13px;margin-bottom:8px">🏡 Villas</div>
+        <div id="villaList"></div>
+        <button class="btn" id="villaAdd" style="width:100%;margin-top:8px">+ Ajouter une villa</button>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">
+          Renommez en écrivant dans la case. Les flèches changent l'ordre des colonnes du planning.
+        </div>
+      </div>
       <div id="syncState" style="font-size:12.5px;line-height:1.6"></div>
       <button class="btn" id="expJson">⬇︎ Sauvegarde : télécharger data.js</button>
       <button class="btn" id="impJson">⬆︎ Restaurer une sauvegarde</button>
@@ -370,7 +385,7 @@ body.ro #add, body.ro #addEvent, body.ro #mSave, body.ro #mDel, body.ro #impJson
 const EMBEDDED = /*<<DATA*/{"version":1,"villas":[],"bookings":[]}/*DATA>>*/;
 let READONLY = /*<<RO*/false/*RO>>*/;
 
-const BUILD = 'v3.5';
+const BUILD = 'v3.6';
 const SRC_LABEL = {booking:'Booking.com', airbnb:'Airbnb', direct:'Direct', interne:'Interne', apreciser:'À préciser'};
 const EVT_LABEL = {travaux:'Travaux', maintenance:'Maintenance', insectes:'Traitement insectes',
                    famille:'Réservation familiale', nettoyage:'Nettoyage exceptionnel', autre:'Intervention'};
@@ -759,6 +774,65 @@ async function dbxSearchFile(){
   if(d){ DATA=d; state.villas=new Set(DATA.villas.map(v=>v.id)); buildVillaChips(); render();
          setSave('Chargé depuis Dropbox','ok'); }
 }
+
+/* ============================================================
+   Villas — ajouter, renommer, réordonner, supprimer
+   ============================================================ */
+function villaCount(id){ return DATA.bookings.filter(b=>b.villa===id).length; }
+
+function paintVillas(){
+  const box = document.getElementById('villaList');
+  box.innerHTML = DATA.villas.map((v,i)=>`
+    <div class="vrow" data-i="${i}">
+      <input value="${esc(v.name)}" data-vname="${i}" maxlength="40">
+      <span class="cnt">${villaCount(v.id)} fiche${villaCount(v.id)>1?'s':''}</span>
+      <button data-vup="${i}" ${i===0?'disabled style="opacity:.3"':''} title="Monter">▲</button>
+      <button data-vdown="${i}" ${i===DATA.villas.length-1?'disabled style="opacity:.3"':''} title="Descendre">▼</button>
+      <button class="del" data-vdel="${i}" title="Supprimer">✕</button>
+    </div>`).join('');
+
+  box.querySelectorAll('[data-vname]').forEach(el=>el.onchange=async ()=>{
+    const i = +el.dataset.vname, nom = el.value.trim();
+    if(!nom){ el.value = DATA.villas[i].name; return; }
+    DATA.villas[i].name = nom;
+    await saveNow(); buildVillaChips(); render(); paintVillas();
+  });
+  box.querySelectorAll('[data-vup]').forEach(el=>el.onclick=async ()=>{
+    const i = +el.dataset.vup; if(i<1) return;
+    [DATA.villas[i-1], DATA.villas[i]] = [DATA.villas[i], DATA.villas[i-1]];
+    await saveNow(); buildVillaChips(); render(); paintVillas();
+  });
+  box.querySelectorAll('[data-vdown]').forEach(el=>el.onclick=async ()=>{
+    const i = +el.dataset.vdown; if(i>=DATA.villas.length-1) return;
+    [DATA.villas[i+1], DATA.villas[i]] = [DATA.villas[i], DATA.villas[i+1]];
+    await saveNow(); buildVillaChips(); render(); paintVillas();
+  });
+  box.querySelectorAll('[data-vdel]').forEach(el=>el.onclick=async ()=>{
+    const i = +el.dataset.vdel, v = DATA.villas[i], n = villaCount(v.id);
+    if(n){
+      alert('Impossible de supprimer « '+v.name+' » : '+n+' fiche(s) y sont rattachées.\n\n'
+        + 'Déplacez ou supprimez d\'abord ces réservations, ou renommez simplement la villa.');
+      return;
+    }
+    if(!confirm('Supprimer « '+v.name+' » ?')) return;
+    DATA.villas.splice(i,1);
+    state.villas.delete(v.id);
+    await saveNow(); buildVillaChips(); render(); paintVillas();
+  });
+}
+
+document.getElementById('villaAdd').onclick = async ()=>{
+  const nom = (prompt('Nom de la nouvelle villa :\n(par exemple « Villa 52 Amina »)') || '').trim();
+  if(!nom) return;
+  // identifiant = le numéro contenu dans le nom, sinon un identifiant unique
+  const m = nom.match(/\d+/);
+  let id = m ? m[0] : '';
+  if(!id || DATA.villas.some(v=>v.id===id)) id = 'v' + Date.now().toString(36);
+  DATA.villas.push({id, name:nom});
+  state.villas.add(id);
+  await saveNow(); buildVillaChips(); render(); paintVillas();
+  alert('« '+nom+' » ajoutée. Elle apparaît dans le planning et dans le formulaire de réservation.');
+};
 
 function dbxPaint(){
   const setup = document.getElementById('dbxSetup'), linked = document.getElementById('dbxLinked');
@@ -1158,7 +1232,7 @@ document.addEventListener('keydown', e=>{
 /* --- menu fichier --- */
 const m2=document.getElementById('mask2');
 document.getElementById('menu').onclick = ()=>{
-  dbxPaint();
+  dbxPaint(); paintVillas();
   document.getElementById('syncState').innerHTML = dbxOn()
     ? 'Sauvegarde conseillée de temps en temps : « télécharger data.js » et rangez le fichier ailleurs que dans le dossier du calendrier.'
     : '';
