@@ -241,7 +241,14 @@ body.ro #villaBox{display:none!important}
   header,.legend,.tabs,.btn{display:none!important}
   body{background:#fff}
   .plan{border:0}
+  /* impression d'une période : on masque tout sauf la zone d'impression */
+  body.prtrange > *:not(#printArea){display:none!important}
+  body.prtrange #printArea{display:block!important}
+  .prtmonth{break-after:page;page-break-after:always}
+  .prtmonth:last-child{break-after:auto;page-break-after:auto}
+  .prtmonth h2{font-size:15px;margin:0 0 8px}
 }
+#printArea{display:none}
 </style>
 </head>
 <body>
@@ -280,6 +287,7 @@ body.ro #villaBox{display:none!important}
 </div>
 
 <main id="main"></main>
+<div id="printArea"></div>
 
 <!-- edit modal -->
 <div class="mask" id="mask">
@@ -373,6 +381,17 @@ body.ro #villaBox{display:none!important}
       <input type="file" id="fileIn" accept=".js,.json" style="display:none">
       <button class="btn" id="expCsv">⬇︎ Exporter la liste en CSV</button>
       <button class="btn" id="prt">🖨 Imprimer le mois affiché</button>
+      <div id="prtPeriodBox" style="border:1px solid var(--line,#e3e7eb);border-radius:10px;padding:10px 12px;margin-top:6px">
+        <div style="font-weight:600;font-size:13px;margin-bottom:8px">🖨 Imprimer une période</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <label style="font-size:12px">De <input type="month" id="prtFrom" style="font:inherit;padding:4px 6px"></label>
+          <label style="font-size:12px">À <input type="month" id="prtTo" style="font:inherit;padding:4px 6px"></label>
+        </div>
+        <button class="btn" id="prtRange" style="margin-top:8px">Imprimer la période</button>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">
+          Une page par mois. Les filtres d'origine et de villas en cours s'appliquent.
+        </div>
+      </div>
     </div>
     <div class="mfoot"><div class="spacer"></div><button class="btn" id="m2Close">Fermer</button></div>
   </div>
@@ -385,7 +404,7 @@ body.ro #villaBox{display:none!important}
 const EMBEDDED = /*<<DATA*/{"version":1,"villas":[],"bookings":[]}/*DATA>>*/;
 let READONLY = /*<<RO*/false/*RO>>*/;
 
-const BUILD = 'v3.6';
+const BUILD = 'v3.7';
 const SRC_LABEL = {booking:'Booking.com', airbnb:'Airbnb', direct:'Direct', interne:'Interne', apreciser:'À préciser'};
 const EVT_LABEL = {travaux:'Travaux', maintenance:'Maintenance', insectes:'Traitement insectes',
                    famille:'Réservation familiale', nettoyage:'Nettoyage exceptionnel', autre:'Intervention'};
@@ -917,7 +936,7 @@ function viewMois(){
   const y=state.y, m=state.m;
   const nd = new Date(y,m+1,0).getDate();
   const first = y+'-'+pad(m+1)+'-01', after = iso(new Date(y,m+1,1));
-  const MOB = window.innerWidth<=720;
+  const MOB = !window.PRINTING && window.innerWidth<=720;
   let vl = DATA.villas.filter(v=>state.villas.has(v.id));
   let switcher = '';
   if(MOB){
@@ -1237,6 +1256,7 @@ document.getElementById('menu').onclick = ()=>{
     ? 'Sauvegarde conseillée de temps en temps : « télécharger data.js » et rangez le fichier ailleurs que dans le dossier du calendrier.'
     : '';
   document.getElementById('syncState').innerHTML += '<div style="margin-top:8px;color:#6b7787;font-size:11.5px">Version du fichier : <b>'+BUILD+'</b></div>';
+  prtDefaults();
   m2.classList.add('on');
 };
 document.getElementById('dbxConnect').onclick = dbxStart;
@@ -1281,6 +1301,56 @@ document.getElementById('expCsv').onclick = ()=>{
   dl(new Blob([csv],{type:'text/csv'}),'reservations.csv');
 };
 document.getElementById('prt').onclick = ()=>{ m2.classList.remove('on'); setTimeout(()=>window.print(),150); };
+
+/* ---------- Impression d'une période (plusieurs mois, une page par mois) ---------- */
+function prtDefaults(){
+  const v = state.y+'-'+pad(state.m+1);
+  const f = document.getElementById('prtFrom'), t = document.getElementById('prtTo');
+  if(f && !f.value) f.value = v;
+  if(t && !t.value) t.value = v;
+}
+
+function imprimerPeriode(){
+  const fv = document.getElementById('prtFrom').value;
+  const tv = document.getElementById('prtTo').value;
+  if(!fv || !tv){ alert('Choisissez le mois de début et le mois de fin.'); return; }
+  let [y1,m1] = fv.split('-').map(Number);
+  let [y2,m2v] = tv.split('-').map(Number);
+  m1--; m2v--;
+  if(y2 < y1 || (y2===y1 && m2v < m1)){ [y1,m1,y2,m2v] = [y2,m2v,y1,m1]; }
+  const nb = (y2-y1)*12 + (m2v-m1) + 1;
+  if(nb > 24 && !confirm(nb+' mois seront imprimés, soit autant de pages. Continuer ?')) return;
+
+  // on rejoue viewMois() pour chaque mois, en restaurant l'état ensuite
+  const sy = state.y, sm = state.m, sv = state.view;
+  window.PRINTING = true;
+  let html = '';
+  try{
+    for(let i=0; i<nb; i++){
+      const d = new Date(y1, m1+i, 1);
+      state.y = d.getFullYear(); state.m = d.getMonth();
+      html += '<section class="prtmonth"><h2>'+MOIS[state.m]+' '+state.y+'</h2>'+viewMois()+'</section>';
+    }
+  } finally {
+    state.y = sy; state.m = sm; state.view = sv;
+    window.PRINTING = false;
+  }
+
+  const area = document.getElementById('printArea');
+  area.innerHTML = html;
+  document.body.classList.add('prtrange');
+  m2.classList.remove('on');
+
+  const nettoyer = ()=>{
+    document.body.classList.remove('prtrange');
+    area.innerHTML = '';
+    window.removeEventListener('afterprint', nettoyer);
+  };
+  window.addEventListener('afterprint', nettoyer);
+  setTimeout(()=>{ window.print(); setTimeout(nettoyer, 1000); }, 200);
+}
+
+document.getElementById('prtRange').onclick = imprimerPeriode;
 function dl(blob,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),3000); }
 
 window.addEventListener('beforeunload', e=>{ if(dirty && !dirHandle){ e.preventDefault(); e.returnValue=''; } });
