@@ -16,6 +16,7 @@
   --booking:#1f6fd0; --booking-bg:#dbe8fa;
   --airbnb:#d6338f;  --airbnb-bg:#fbd9ef;
   --direct:#0e9aad;  --direct-bg:#d3f2f6;
+  --abritel:#7b3fe4; --abritel-bg:#e9def9;
   --interne:#6b7480; --interne-bg:#e3e7eb;
   --apreciser:#9aa3ae; --apreciser-bg:#f2f4f7;
   --row:42px;
@@ -57,6 +58,7 @@ header{position:sticky;top:0;z-index:60;background:var(--panel);border-bottom:1p
 .dot.booking{background:var(--booking-bg);border-color:var(--booking)}
 .dot.airbnb{background:var(--airbnb-bg);border-color:var(--airbnb)}
 .dot.direct{background:var(--direct-bg);border-color:var(--direct)}
+.dot.abritel{background:var(--abritel-bg);border-color:var(--abritel)}
 .dot.interne{background:var(--interne-bg);border-color:var(--interne)}
 .dot.apreciser{background:repeating-linear-gradient(45deg,#fff,#fff 3px,#dfe4ea 3px,#dfe4ea 6px);border-color:#b6bec8}
 .savebox{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
@@ -92,11 +94,17 @@ main{padding:12px}
 .stay.s-booking{background:var(--booking-bg);border-color:var(--booking)}
 .stay.s-airbnb{background:var(--airbnb-bg);border-color:var(--airbnb)}
 .stay.s-direct{background:var(--direct-bg);border-color:var(--direct)}
+.stay.s-abritel{background:var(--abritel-bg);border-color:var(--abritel)}
 .stay.s-interne{background:var(--interne-bg);border-color:var(--interne);
   background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.045),rgba(0,0,0,.045) 6px,transparent 6px,transparent 12px)}
 .stay.s-apreciser{background:var(--apreciser-bg);border-color:var(--apreciser);border-style:dashed;border-left-style:solid}
 .stay.short{padding:2px 6px}
 .stay.short .nm{font-size:11.5px}
+/* bloc minuscule (1 nuit à cheval, sortie le 1er du mois) : nom seul, aucun pied */
+.stay.tiny{padding:1px 5px;display:flex;align-items:center}
+.stay.tiny .nm{font-size:10.5px;line-height:1.1}
+.stay .note{opacity:.8}
+.stay .nbul{opacity:.5;margin-right:2px}
 .tag{display:inline-block;font-size:9.5px;font-weight:800;letter-spacing:.4px;padding:1px 5px;border-radius:4px;
   background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.12);margin-right:4px;vertical-align:1px}
 .arrive{position:absolute;left:4px;right:4px;height:17px;z-index:4;border-radius:5px 5px 0 0;
@@ -144,6 +152,7 @@ table.list tr:hover td{background:#f7fbff;cursor:pointer}
 .pill.s-booking{background:var(--booking-bg);border-color:var(--booking);color:#164e94}
 .pill.s-airbnb{background:var(--airbnb-bg);border-color:var(--airbnb);color:#96206a}
 .pill.s-direct{background:var(--direct-bg);border-color:var(--direct);color:#0a6f7d}
+.pill.s-abritel{background:var(--abritel-bg);border-color:var(--abritel);color:#5a26ad}
 .pill.s-interne{background:var(--interne-bg);border-color:var(--interne);color:#465059}
 .pill.s-apreciser{background:var(--apreciser-bg);border-color:var(--apreciser);color:#6b7480}
 .sums{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
@@ -180,9 +189,10 @@ body.ro #villaBox{display:none!important}
 .vrow .del{color:#a32020;border-color:#f0c2c2;background:#fff5f5}
 .vrow .cnt{font-size:11px;color:var(--muted);white-space:nowrap;min-width:52px;text-align:right}
 /* ---------- vues téléphone ---------- */
-.vswitch{display:none;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px}
-.vswitch button{flex:1 0 auto;border:1px solid var(--line);background:#fff;border-radius:9px;
-  padding:9px 12px;font-weight:700;font-size:13px;white-space:nowrap;color:var(--muted)}
+.vswitch{display:none;gap:6px;margin-bottom:8px;padding-bottom:2px}
+.vswitch button{border:1px solid var(--line);background:#fff;border-radius:9px;min-width:0;width:100%;
+  padding:9px 8px;font-weight:700;font-size:13px;white-space:nowrap;color:var(--muted);
+  overflow:hidden;text-overflow:ellipsis}
 .vswitch button.on{background:var(--booking);border-color:var(--booking);color:#fff}
 .cards{display:flex;flex-direction:column;gap:8px}
 .card{background:var(--panel);border:1px solid var(--line);border-left-width:5px;border-radius:10px;padding:10px 12px}
@@ -193,11 +203,14 @@ body.ro #villaBox{display:none!important}
 .card.s-booking{border-left-color:var(--booking)}
 .card.s-airbnb{border-left-color:var(--airbnb)}
 .card.s-direct{border-left-color:var(--direct)}
+.card.s-abritel{border-left-color:var(--abritel)}
 .card.s-interne{border-left-color:var(--interne);background:var(--interne-bg)}
 .card.s-apreciser{border-left-color:var(--apreciser)}
 
 @media (max-width:720px){
-  .vswitch{display:flex}
+  /* grille 2 colonnes : toutes les villas restent visibles en portrait,
+     quel qu'en soit le nombre — plus de bouton hors écran */
+  .vswitch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
   .legend .chip[data-villa]{display:none}
   :root{--row:52px}
   .stay .nm{font-size:13.5px}
@@ -277,9 +290,12 @@ body.ro #villaBox{display:none!important}
   <span style="font-weight:700;font-size:12px">Filtres :</span>
   <span class="chip on" data-src="booking"><i class="dot booking"></i>Booking.com</span>
   <span class="chip on" data-src="airbnb"><i class="dot airbnb"></i>Airbnb</span>
+  <span class="chip on" data-src="abritel"><i class="dot abritel"></i>Abritel</span>
   <span class="chip on" data-src="direct"><i class="dot direct"></i>Direct</span>
   <span class="chip on" data-src="interne"><i class="dot interne"></i>Événements internes</span>
   <span class="chip on" data-src="apreciser"><i class="dot apreciser"></i>À préciser</span>
+  <span style="width:10px"></span>
+  <span class="chip off" id="chipNoAv" title="N'afficher que les réservations Booking.com et directes sans avance versée. Airbnb et Abritel sont exclus : la plateforme encaisse la totalité à l'enregistrement.">💸 Sans avance</span>
   <span style="width:14px"></span>
   <span id="villaChips"></span>
   <div class="spacer"></div>
@@ -298,6 +314,7 @@ body.ro #villaBox{display:none!important}
         <div class="srcpick" id="srcPick">
           <button data-s="booking">Booking.com</button>
           <button data-s="airbnb">Airbnb</button>
+          <button data-s="abritel">Abritel</button>
           <button data-s="direct">Réservation directe</button>
           <button data-s="interne">Événement interne</button>
           <button data-s="apreciser">À préciser</button>
@@ -404,8 +421,8 @@ body.ro #villaBox{display:none!important}
 const EMBEDDED = /*<<DATA*/{"version":1,"villas":[],"bookings":[]}/*DATA>>*/;
 let READONLY = /*<<RO*/false/*RO>>*/;
 
-const BUILD = 'v3.7';
-const SRC_LABEL = {booking:'Booking.com', airbnb:'Airbnb', direct:'Direct', interne:'Interne', apreciser:'À préciser'};
+const BUILD = 'v3.8';
+const SRC_LABEL = {booking:'Booking.com', airbnb:'Airbnb', abritel:'Abritel', direct:'Direct', interne:'Interne', apreciser:'À préciser'};
 const EVT_LABEL = {travaux:'Travaux', maintenance:'Maintenance', insectes:'Traitement insectes',
                    famille:'Réservation familiale', nettoyage:'Nettoyage exceptionnel', autre:'Intervention'};
 const MOIS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
@@ -415,9 +432,9 @@ const JOURS3 = ['dim','lun','mar','mer','jeu','ven','sam'];
 let DATA = null, dirHandle = null, dirty = false, lastLoadedStamp = null;
 const state = {
   view:'mois', y:new Date().getFullYear(), m:new Date().getMonth(),
-  src:new Set(['booking','airbnb','direct','interne','apreciser']),
+  src:new Set(['booking','airbnb','abritel','direct','interne','apreciser']),
   mVilla:'',
-  villas:new Set(), q:'', editing:null
+  villas:new Set(), q:'', noAvance:false, editing:null
 };
 
 /* ---------- utilitaires date ---------- */
@@ -887,9 +904,28 @@ function buildVillaChips(){
   });
 }
 
+/* Aucune avance versée : champ vide ou montant nul.
+   Ne concerne que Booking.com et les réservations directes : ce sont les seules
+   où l'on encaisse un prépaiement avant l'arrivée. Airbnb et Abritel sont réglés
+   en une fois par la plateforme à l'enregistrement du voyageur, une avance vide
+   y est donc normale et ne doit pas être signalée. Les événements internes
+   n'ont pas de montants. */
+const SRC_AVANCE = new Set(['booking','direct']);
+const sansAvance = b => b.kind!=='event' && SRC_AVANCE.has(b.source)
+                     && (b.avance==null || Number(b.avance)===0);
+
+/* Les remarques sont saisies en une seule ligne, séparées par « / » ou par des
+   retours ligne. On coupe sur le slash ENTOURÉ D'ESPACES uniquement, pour ne pas
+   casser les dates du type 03/08/2026. */
+function noteLines(s){
+  if(!s) return [];
+  return String(s).split(/\r?\n+|\s+\/\s+/).map(x=>x.trim()).filter(Boolean);
+}
+
 function visible(b){
   if(!state.src.has(b.source)) return false;
   if(!state.villas.has(b.villa)) return false;
+  if(state.noAvance && !sansAvance(b)) return false;
   if(state.q){
     const q=state.q.toLowerCase();
     if(!((b.client||'').toLowerCase().includes(q) || (b.notes||'').toLowerCase().includes(q) ||
@@ -897,7 +933,10 @@ function visible(b){
   }
   return true;
 }
-const overlaps = (b,a,z) => b.start < z && b.end > a;
+/* Un séjour touche le mois [a,z[ dès lors qu'il commence avant la fin du mois et
+   que sa sortie tombe le premier jour du mois ou après : une sortie le 01/08 doit
+   rester visible en août (le client occupe la matinée du 1er). */
+const overlaps = (b,a,z) => b.start < z && b.end >= a;
 
 function render(){
   if(!DATA.villas.length || !DATA.bookings.length){
@@ -967,7 +1006,7 @@ function viewMois(){
     const list = DATA.bookings.filter(b=>b.villa===v.id && visible(b) && overlaps(b,first,after))
                              .sort((a,b)=>a.start.localeCompare(b.start));
     // jours où un client sort (sortie visible dans le mois affiché)
-    const depDays = new Set(list.filter(b=>b.end>first && b.end<after).map(b=>parse(b.end).getDate()));
+    const depDays = new Set(list.filter(b=>b.end>=first && b.end<after).map(b=>parse(b.end).getDate()));
     let grid='<div class="vgrid">';
     for(let d=1; d<=nd; d++){ const wd=new Date(y,m,d).getDay(); grid+=`<div class="${wd===0||wd===6?'we':''}"></div>`; }
     grid+='</div>';
@@ -982,30 +1021,63 @@ function viewMois(){
       const top    = contBefore ? 1 : (sd-1)*ROW + HALF;
       const bottom = endInMonth ? (parse(b.end).getDate()-1)*ROW + HALF : nd*ROW - 1;
       const h = Math.max(20, bottom - top);
-      const short = h < 58;
       const arriveHere = !contBefore;
+
+      /* On n'affiche que le nombre de lignes qui tiennent réellement dans le bloc :
+         c'est ce qui évitait mal les chevauchements sur les séjours courts et sur
+         les fins de mois. Hauteurs mesurées d'après les tailles de police CSS. */
+      const LH_NM = MOB?18:16, LH = MOB?16:14, PADT = 4, FOOT = MOB?19:17;
+      const TINY = h < LH_NM + PADT + FOOT - 4;      // trop bas même pour le pied
+      // la pastille « → ENTRÉE » prend sa propre ligne quand il y a la place,
+      // sinon elle se replie sur la ligne du nom (séjours d'une nuit)
+      const tagHtml = (arriveHere && !TINY) ? '<span class="tag">→ ENTRÉE</span>' : '';
+      const TAG_LH = MOB?15:14;
+      const tagSeule = !!tagHtml && h >= PADT + TAG_LH + LH_NM + FOOT;
+      const TAG_H = tagSeule ? TAG_LH : 0;
+      const slots = TINY ? 0 : Math.max(0, Math.floor((h - PADT - FOOT - LH_NM - TAG_H) / LH));
+
       const nm = b.kind==='event' ? (EVT_LABEL[b.eventType]||'Intervention')+(b.client&&b.client!=='Événement'?' — '+b.client:'') : b.client;
-      let inner = `<div class="nm">${contBefore?'⟵ suite · ':''}${esc(nm)}</div>`;
-      if(!short){
-        const trav = b.nb? `👥 ${b.nb}` : (b.nbDetail?('👥 '+esc(b.nbDetail)):'');
-        inner += `<div class="ln">${trav}${trav?' · ':''}${fmtFR(b.start)} → ${fmtFR(b.end)} · ${nights(b.start,b.end)} nuit${nights(b.start,b.end)>1?'s':''}</div>`;
-        if(b.kind!=='event'){
-          inner += `<div class="mny">${b.total!=null?'Total '+money(b.total,b.currency):'Total —'}`
-                +  `${b.avance!=null?' · Av. '+money(b.avance,b.currency):''}</div>`;
-          if(b.reste!=null && b.reste>0) inner += `<div class="mny reste">Reste ${money(b.reste,b.currency)}</div>`;
-          else if(b.reste===0) inner += `<div class="mny" style="color:#1f8f4a">Soldé ✓</div>`;
-        }
-        if(b.notes) inner += `<div class="ln" style="opacity:.75">📝 ${esc(b.notes)}</div>`;
-      } else if(b.kind!=='event' && b.reste!=null && b.reste>0){
-        inner += `<div class="mny reste">Reste ${money(b.reste,b.currency)}</div>`;
+      // bloc minuscule : la sortie est repliée sur la ligne du nom, faute de place
+      const nmSuffix = (TINY && endInMonth) ? ' · ← '+fmtFR(b.end) : '';
+      let inner = `<div class="nm">${tagSeule?'':tagHtml}${contBefore?'⟵ suite · ':''}${esc(nm)}${nmSuffix}</div>`;
+
+      const lignes = [];
+      const trav = b.nb? `👥 ${b.nb}` : (b.nbDetail?('👥 '+esc(b.nbDetail)):'');
+      lignes.push(`<div class="ln">${trav}${trav?' · ':''}${fmtFR(b.start)} → ${fmtFR(b.end)} · ${nights(b.start,b.end)} nuit${nights(b.start,b.end)>1?'s':''}</div>`);
+      let resteHtml = '';
+      if(b.kind!=='event'){
+        lignes.push(`<div class="mny">${b.total!=null?'Total '+money(b.total,b.currency):'Total —'}`
+                  + `${b.avance!=null?' · Av. '+money(b.avance,b.currency):''}</div>`);
+        if(b.reste!=null && b.reste>0) resteHtml = `<div class="mny reste">Reste ${money(b.reste,b.currency)}</div>`;
+        else if(b.reste===0) resteHtml = `<div class="mny" style="color:#1f8f4a">Soldé ✓</div>`;
+        if(resteHtml) lignes.push(resteHtml);
       }
+      /* Remarques : une par ligne quand le bloc est assez haut pour les accueillir
+         toutes. Sinon — séjours courts — elles sont regroupées sur une seule ligne
+         plutôt que d'en perdre en silence ; l'infobulle et la vue Liste gardent le
+         détail ligne par ligne. */
+      const notes = noteLines(b.notes);
+      if(notes.length){
+        const restant = slots - lignes.length;
+        if(restant >= notes.length)
+          notes.forEach((t,i)=>lignes.push(
+            `<div class="ln note">${i===0?'📝 ':'<span class="nbul">•</span> '}${esc(t)}</div>`));
+        else
+          lignes.push(`<div class="ln note">📝 ${esc(notes.join(' · '))}</div>`);
+      }
+
+      const show = lignes.slice(0, slots);
+      // si le reste à payer se fait couper, il prend la dernière place visible
+      if(resteHtml && slots>0 && show.indexOf(resteHtml)<0) show[show.length-1] = resteHtml;
+      inner += show.join('');
+
       const tip = tooltip(b);
-      const foot = endInMonth
+      const foot = TINY ? '' : (endInMonth
         ? `<div class="out">← SORTIE ${fmtFR(b.end)} · ${JOURS3[parse(b.end).getDay()]}</div>`
-        : `<div class="out next">⟶ sortie ${fmtFR(b.end)} (mois suivant)</div>`;
-      blocks += `<div class="stay s-${b.source}${short?' short':''} hasout" data-id="${b.id}" title="${tip}"
+        : `<div class="out next">⟶ sortie ${fmtFR(b.end)} (mois suivant)</div>`);
+      blocks += `<div class="stay s-${b.source}${slots<2?' short':''}${TINY?' tiny':''}${TINY?'':' hasout'}" data-id="${b.id}" title="${tip}"
                    style="top:${top}px;height:${h}px">
-                   ${arriveHere?'<span class="tag">→ ENTRÉE</span>':''}${inner}${foot}</div>`;
+                   ${tagSeule?tagHtml:''}${inner}${foot}</div>`;
       // départ et arrivée le même jour : le jour est coupé en deux
       if(arriveHere && depDays.has(sd)){
         blocks += `<div class="turn" style="top:${(sd-1)*ROW + HALF - 1}px"></div>`
@@ -1032,7 +1104,7 @@ function tooltip(b){
   if(b.total!=null) L.push('Total : '+money(b.total,b.currency));
   if(b.avance!=null) L.push('Avance : '+money(b.avance,b.currency));
   if(b.reste!=null) L.push('Reste : '+money(b.reste,b.currency));
-  if(b.notes) L.push('Note : '+b.notes);
+  if(b.notes){ const nl=noteLines(b.notes); L.push('Remarques :'); nl.forEach(t=>L.push('  • '+t)); }
   if(b.endEstimated) L.push('⚠︎ date de sortie estimée lors de l\'import');
   return esc(L.join('\n'));
 }
@@ -1119,8 +1191,8 @@ function viewListe(){
         <div class="d">${fmtFRY(b.start)} → ${fmtFRY(b.end)} · ${nights(b.start,b.end)} nuit${nights(b.start,b.end)>1?'s':''}${b.nb?' · 👥 '+b.nb:''}</div>
         <div class="m">${b.total!=null?money(b.total,b.currency):'—'}${b.avance!=null?' · Av. '+money(b.avance,b.currency):''}
           ${b.reste>0?'<span style="color:#b3261e"> · Reste '+money(b.reste,b.currency)+'</span>':(b.reste===0?'<span style="color:#1f8f4a"> · Soldé ✓</span>':'')}</div>
-        <div class="d" style="margin-top:4px"><span class="pill s-${b.source}">${SRC_LABEL[b.source]}</span>
-          ${b.notes?' <span style="opacity:.7">📝 '+esc(b.notes.slice(0,60))+'</span>':''}</div>
+        <div class="d" style="margin-top:4px"><span class="pill s-${b.source}">${SRC_LABEL[b.source]}</span></div>
+        ${noteLines(b.notes).map((t,i)=>`<div class="d" style="opacity:.75;margin-top:2px">${i===0?'📝 ':'<span style="opacity:.5">•</span> '}${esc(t)}</div>`).join('')}
       </div>`;}).join('');
     return head+`<div class="cards">${cards}${more}</div>`;
   }
@@ -1133,7 +1205,7 @@ function viewListe(){
     <td>${b.total!=null?money(b.total,b.currency):'—'}</td>
     <td>${b.avance!=null?money(b.avance,b.currency):'—'}</td>
     <td style="color:${b.reste>0?'#b3261e':'#1f8f4a'};font-weight:700">${b.reste!=null?money(b.reste,b.currency):'—'}</td>
-    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis">${esc(b.notes||'')}</td></tr>`).join('');
+    <td style="max-width:260px">${noteLines(b.notes).map(t=>`<div>${esc(t)}</div>`).join('')}</td></tr>`).join('');
   return head+`<div class="tablewrap"><table class="list"><thead><tr>
     <th>Entrée</th><th>Sortie</th><th>Nuits</th><th>Client</th><th>Villa</th><th>Origine</th>
     <th>Voy.</th><th>Total</th><th>Avance</th><th>Reste</th><th>Remarques</th></tr></thead><tbody>${rows}</tbody></table></div>`;
@@ -1238,6 +1310,12 @@ document.querySelectorAll('.chip[data-src]').forEach(el=>el.onclick=()=>{
   else { state.src.add(s); el.classList.replace('off','on'); }
   render();
 });
+document.getElementById('chipNoAv').onclick = function(){
+  state.noAvance = !state.noAvance;
+  this.classList.toggle('on', state.noAvance);
+  this.classList.toggle('off', !state.noAvance);
+  render();
+};
 let tq; document.getElementById('search').oninput = e=>{ clearTimeout(tq); tq=setTimeout(()=>{ state.q=e.target.value.trim(); render(); },200); };
 document.getElementById('add').onclick = ()=>{ state.newKind='booking'; openEdit(null); };
 document.getElementById('addEvent').onclick = ()=>{ state.newKind='event'; openEdit(null); };
